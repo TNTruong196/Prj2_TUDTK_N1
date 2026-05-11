@@ -6,7 +6,7 @@ from matrix_helper import *
 # y: Vector kich thuoc nx1 chua cac gia tri quan sat thuc te
 def ols_fit(X, y):
     if not is_matrix(X) or not is_matrix(y):
-        raise ValueError("X va y phai la ma tran 2D")
+        raise ValueError("X va y phai la ma tran")
         
     n = len(X)
     p_plus_1 = len(X[0])
@@ -36,3 +36,18 @@ def ols_fit(X, y):
     
     return beta, sigma_sqr
 
+
+# X: Ma tran thiet ke kich thuoc nx(p+1)
+def hat_matrix(X):
+    if not is_matrix(X):
+        raise ValueError("X phai la ma tran")
+    
+    # Cong thuc: H = X * (X^T * X)^-1 * X^T
+    X_t = mat_trans(X)
+    X_t_X = mat_mul(X_t, X)
+    X_t_X_inv = mat_inverse(X_t_X)
+    
+    temp = mat_mul(X, X_t_X_inv)
+    H = mat_mul(temp, X_t)
+    
+    return H
