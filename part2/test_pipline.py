@@ -2,9 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-# Import class từ file của bạn (Lưu ý tên file phải khớp chính xác)
-# Nếu file của bạn tên là DataPipline.py thì import như sau:
-from DataPipline import DataPipeline 
+# Import class DataPipeline từ file data_pipeline.py
+from data_pipeline import DataPipeline
 
 def run_tests():
     print("="*40)
@@ -110,6 +109,31 @@ def run_tests():
         if inf_test_cols:
             print(f"   -> ⚠️ LỖI: Tập Test bị dính Vô cực (Inf) tại các cột: {inf_test_cols}")
         passed_all = False
+    
+    # TEST 5: Kiểm tra Outlier Handling (Winsorization)
+    if hasattr(pipeline, 'outlier_bounds') and len(pipeline.outlier_bounds) > 0:
+        # Kiểm tra trên dữ liệu trước chuẩn hóa: inverse Z-score rồi check bounds
+        outlier_found = False
+        for col, (lower, upper) in pipeline.outlier_bounds.items():
+            if col in X_train_processed.columns:
+                # Inverse Z-score: x_original = x_zscore * std + mean
+                col_mean = pipeline.means[col]
+                col_std = pipeline.stds[col] if pipeline.stds[col] != 0 else 1.0
+                original_vals = X_train_processed[col] * col_std + col_mean
+                violations = ((original_vals < lower - 1e-6) | (original_vals > upper + 1e-6)).sum()
+                if violations > 0:
+                    outlier_found = True
+                    break
+        if not outlier_found:
+            print("TEST 5 PASSED: Outliers da duoc xu ly bang Winsorization (IQR Capping).")
+            print(f"   -> So cot duoc Winsorize: {len(pipeline.outlier_bounds)}")
+        else:
+            print("TEST 5 FAILED: Van con outlier sau khi Winsorization.")
+            passed_all = False
+    else:
+        print("TEST 5 FAILED: Pipeline khong co outlier_bounds (chua xu ly outlier).")
+        passed_all = False
+
     if passed_all:
         print("🎉 XUẤT SẮC! Class DataPipeline hoạt động hoàn hảo và sẵn sàng để train.")
         print("Danh sách các cột đã bị drop (Missing > 50%):", pipeline.cols_to_drop)
