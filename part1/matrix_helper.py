@@ -87,3 +87,32 @@ def is_matrix(param):
     
     first_row_len = len(param[0])
     return all(isinstance(row, list) and len(row) == first_row_len for row in param)
+
+# Tra ve ma tran don vi I co kich thuoc n x n
+def mat_identity(n):
+    I = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                I[i][j] = 1
+    return I          
+
+def mat_add(A, B):
+    if not is_matrix(A) or not is_matrix(B):
+        raise ValueError("Khong phai ma tran")
+    m, n = len(A), len(A[0])
+    if m != len(B) and n != len(B[0]):
+        raise ValueError("Kich thuoc khong phu hop de cong")
+    
+    C = [[A[i][j] + B[i][j] for j in range(n)] for i in range(m)]
+    
+    return C     
+
+def mat_scalar_mul(A, scalar):
+    if not is_matrix(A):
+        raise ValueError("Khong phai ma tran")
+    
+    m, n = len(A), len(A[0])
+    C = [[A[i][j] * scalar for j in range(n)] for i in range(m)]
+    
+    return C     
