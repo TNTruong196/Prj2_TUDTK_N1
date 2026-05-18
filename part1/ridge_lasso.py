@@ -57,4 +57,95 @@ def ridge_trace(X, y, lam=None):
 
     return beta_traces
     
+# Ham so sanh 2 ma tran A va B, tra ve True neu chenh lech tung phan tu khong qua tol, nguoc lai tra ve False
+def _almost_equal_matrix(A, B, tol=1e-6):
+      if len(A) != len(B) or len(A[0]) != len(B[0]):
+          return False
+
+      for i in range(len(A)):
+          for j in range(len(A[0])):
+              if abs(A[i][j] - B[i][j]) > tol:
+                  return False
+
+      return True
+  
+# Ham tinh norm L2 cua beta, bo qua he so chinh (beta[0])
+def _norm_without_intercept(beta):
+      total = 0.0
+      for i in range(1, len(beta)):
+          total += beta[i][0] ** 2
+      return total ** 0.5
+  
+def test_ridge_fit_lamda0():
+    from ols_implementation import ols_fit
     
+    X = [
+        [1.0, 1.0],
+        [1.0, 2.0],
+        [1.0, 3.0],
+        [1.0, 4.0],
+    ]
+    y = [[3.0], [5.0], [7.0], [9.0]]
+    
+    beta_ridge = ridge_fit(X, y, lam=0)
+    beta_ols, s = ols_fit(X, y)
+    
+    assert _almost_equal_matrix(beta_ridge, beta_ols), "TEST 1 FAILED: ridge_fit voi lambda=0 khong gan bang ols_fit"
+    print("TEST 1 PASSED: ridge_fit voi lambda=0 gan bang ols_fit")
+
+def test_ridge_fit_against_sklearn():
+      from sklearn.linear_model import Ridge
+
+      X = [
+          [1.0, 1.0],
+          [1.0, 2.0],
+          [1.0, 3.0],
+          [1.0, 4.0],
+      ]
+      y = [[3.0], [5.0], [7.0], [9.0]]
+      lam = 2.0
+
+      beta_custom = ridge_fit(X, y, lam)
+
+      # X cua minh co cot intercept san, sklearn thi de fit_intercept=True
+      # nen phai bo cot intercept truoc khi dua vao sklearn.
+      X_sklearn = [[row[1]] for row in X]
+      y_sklearn = [row[0] for row in y]
+
+      model = Ridge(alpha=lam, fit_intercept=True)
+      model.fit(X_sklearn, y_sklearn)
+
+      beta_sklearn = [[model.intercept_]]
+      for coef in model.coef_:
+          beta_sklearn.append([coef])
+
+      assert _almost_equal_matrix(beta_custom, beta_sklearn, tol=1e-5), (
+          "\nTEST 2 FAILED:"
+          f"\nbeta_custom  = {beta_custom}"
+          f"\nbeta_sklearn = {beta_sklearn}"
+      )
+
+      print("TEST 2 PASSED: ridge_fit gan bang sklearn Ridge")
+    
+def test_ridge_shrinkage():
+    X = [
+        [1.0, 1.0],
+        [1.0, 2.0],
+        [1.0, 3.0],
+        [1.0, 4.0],
+    ]
+    y = [[3.0], [5.0], [7.0], [9.0]]
+
+    beta_small = ridge_fit(X, y, 0.01)
+    beta_large = ridge_fit(X, y, 100.0)
+
+    assert _norm_without_intercept(beta_large) < _norm_without_intercept(beta_small)
+    print("TEST 3 PASSED: lambda lon lam he so feature bi shrink")
+
+def run_tests():
+    test_ridge_fit_lamda0()
+    test_ridge_fit_against_sklearn()
+    test_ridge_shrinkage()
+    
+if __name__ == "__main__":
+    run_tests()
