@@ -21,7 +21,7 @@ def ridge_fit(X, y, lam):
     
     return beta
 
-
+# Ham ve ridge trace, cho phep nguoi dung truyen vao list lambda tuong ung, neu khong truyen thi se su dung 100 gia tri lambda tu 10^-4 den 10^4
 def ridge_trace(X, y, lam=None):
     if lam is None:
         lambdas = [10 ** (-4 + 8 * i / 99) for i in range(100)]
