@@ -6,6 +6,7 @@ import scipy.stats as stats
 
 # X: Ma tran thiet ke kich thuoc nx(p+1) voi cot dau toan 1
 # y: Vector kich thuoc nx1 chua cac gia tri quan sat thuc te
+# Tra ve: Nghiem OLS va uoc luong phuong sai nhieu
 def ols_fit(X, y):
     if not is_matrix(X) or not is_matrix(y):
         raise ValueError("X va y phai la ma tran")
@@ -40,6 +41,7 @@ def ols_fit(X, y):
 
 
 # X: Ma tran thiet ke kich thuoc nx(p+1)
+# Tra ve: Ma tran chieu (hat matrix)
 def hat_matrix(X):
     if not is_matrix(X):
         raise ValueError("X phai la ma tran")
