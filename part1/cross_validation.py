@@ -1,6 +1,11 @@
-from matrix_helper import *
 import random
-from ols_implementation import ols_fit
+
+try:
+    from part1.matrix_helper import *
+    from part1.ols_implementation import ols_fit
+except ModuleNotFoundError:
+    from matrix_helper import *
+    from ols_implementation import ols_fit
 
 SEED = 42
 
@@ -111,7 +116,10 @@ def test_kfold_reproducible():
 
 
 def test_kfold_with_custom_fit_func():
-    from ridge_lasso import ridge_fit
+    try:
+        from part1.ridge_lasso import ridge_fit
+    except ModuleNotFoundError:
+        from ridge_lasso import ridge_fit
 
     X = [
         [1.0, 1.0],

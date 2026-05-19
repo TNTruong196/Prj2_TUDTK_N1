@@ -1,6 +1,10 @@
-from matrix_helper import *
 import math
 import scipy.stats as stats
+
+try:
+    from part1.matrix_helper import *
+except ModuleNotFoundError:
+    from matrix_helper import *
 
 # Chu y: Vector duoc bieu dien bang 2D list
 
