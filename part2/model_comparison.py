@@ -22,6 +22,7 @@ from part1.cross_validation import kfold_cv
 from part1.matrix_helper import mat_mul
 from part1.ols_implementation import ols_fit
 from part1.ridge_lasso import plot_ridge_trace, ridge_fit
+from part2.advanced_methods import bayesian_linear_fit, bayesian_predict
 
 try:
     from part2.data_pipeline import DataPipeline
@@ -238,7 +239,8 @@ def prepare_air_quality_data(data_path=DATA_PATH, test_size=0.2):
 
 def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     """
-    Train OLS co ban va Ridge(lambda tot nhat), sau do danh gia tren test set.
+    Train OLS co ban, Ridge(lambda tot nhat) va Bayesian Linear Regression,
+    sau do danh gia tren test set.
 
     Returns:
         dict gom best_lambda, cv_results, metrics_table, models, data
@@ -254,9 +256,17 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
 
     beta_ols, sigma2_ols = ols_fit(data["X_train"], data["y_train"])
     beta_ridge = ridge_fit(data["X_train"], data["y_train"], best_lambda)
+    posterior_bayes = bayesian_linear_fit(
+        data["X_train"],
+        data["y_train"],
+        sigma2=sigma2_ols,
+        prior_variance=100.0,
+        intercept_prior_variance=1e12,
+    )
 
     y_pred_ols = predict(data["X_test"], beta_ols)
     y_pred_ridge = predict(data["X_test"], beta_ridge)
+    y_pred_bayes = bayesian_predict(data["X_test"], posterior_bayes)
 
     metrics_table = pd.DataFrame(
         [
@@ -264,6 +274,10 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
             {
                 "Model": f"Ridge (lambda={best_lambda:.6g})",
                 **compute_metrics(data["y_test"], y_pred_ridge),
+            },
+            {
+                "Model": "Bayesian Linear Regression",
+                **compute_metrics(data["y_test"], y_pred_bayes),
             },
         ]
     )
@@ -279,10 +293,12 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
         "models": {
             "ols": {"beta": beta_ols, "sigma2": sigma2_ols},
             "ridge": {"beta": beta_ridge, "lambda": best_lambda},
+            "bayesian": posterior_bayes,
         },
         "predictions": {
             "ols": y_pred_ols,
             "ridge": y_pred_ridge,
+            "bayesian": y_pred_bayes,
         },
         "data": data,
     }
