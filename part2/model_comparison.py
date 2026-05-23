@@ -20,7 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from part1.cross_validation import kfold_cv
 from part1.matrix_helper import mat_mul
-from part1.ols_implementation import ols_fit
+from part1.ols_implementation import ols_fit, model_metrics, coef_inference
 from part1.ridge_lasso import plot_ridge_trace, ridge_fit
 from part2.advanced_methods import bayesian_linear_fit, bayesian_predict
 
@@ -91,6 +91,153 @@ def compute_metrics(y_true, y_pred):
     r2 = 1 - rss / tss if tss != 0 else 0.0
 
     return {"MAE": mae, "RMSE": rmse, "R2": r2}
+
+
+def vif_values(X, feature_names=None):
+    """
+    Tinh VIF cho tung bien doc lap, bo qua cot intercept o index 0.
+
+    X: 2D list da co cot intercept.
+    feature_names: list ten cot, cung thu tu voi X. Neu None thi dung x1, x2, ...
+    Returns: list of dict [{"feature": name, "VIF": value}, ...]
+    """
+    if not X or not X[0]:
+        raise ValueError("X khong duoc rong va phai co it nhat 1 cot")
+
+    n_cols = len(X[0])
+
+    if n_cols < 2:
+        return []
+
+    results = []
+
+    for j in range(1, n_cols):
+        y_j = [[row[j]] for row in X]
+        X_j = [[row[k] for k in range(n_cols) if k != j] for row in X]
+
+        if feature_names is not None and j < len(feature_names):
+            feature_name = feature_names[j]
+        else:
+            feature_name = f"x{j}"
+
+        if len(X_j[0]) == 1:
+            vif = 1.0
+        else:
+            beta_j, _ = ols_fit(X_j, y_j)
+            y_hat_j = mat_mul(X_j, beta_j)
+
+            p = len(X_j[0]) - 1
+            metrics = model_metrics(y_j, y_hat_j, p)
+            r2_j = metrics["R_squared"]
+
+            denominator = 1 - r2_j
+
+            if denominator <= 1e-12:
+                vif = float("inf")
+            else:
+                vif = 1 / denominator
+
+        results.append(
+            {
+                "feature": feature_name,
+                "VIF": vif,
+            }
+        )
+
+    return results
+
+
+def ols_variable_selection(X, y, feature_names=None, p_threshold=0.05, vif_threshold=10.0):
+    """
+    Chon bien bang backward elimination dua tren VIF va p-value.
+
+    X: 2D list da co cot intercept.
+    y: 2D list cot target.
+    feature_names: list ten cot, cung thu tu voi X.
+    """
+    if not X or not X[0]:
+        raise ValueError("X khong duoc rong")
+    if len(X) != len(y):
+        raise ValueError("X va y phai co cung so dong")
+
+    n_cols = len(X[0])
+    if feature_names is None:
+        feature_names = [f"x{i}" for i in range(n_cols)]
+    elif len(feature_names) != n_cols:
+        raise ValueError("feature_names phai co cung so cot voi X")
+
+    selected_indices = list(range(n_cols))
+    removed_features = []
+    removal_log = []
+
+    while True:
+        X_current = [[row[i] for i in selected_indices] for row in X]
+        current_feature_names = [feature_names[i] for i in selected_indices]
+
+        beta, sigma2 = ols_fit(X_current, y)
+
+        if len(selected_indices) <= 1:
+            break
+
+        vifs = vif_values(X_current, current_feature_names)
+        max_vif_item = max(vifs, key=lambda item: item["VIF"])
+
+        if max_vif_item["VIF"] > vif_threshold:
+            remove_name = max_vif_item["feature"]
+            remove_position = current_feature_names.index(remove_name)
+            remove_original_index = selected_indices[remove_position]
+
+            selected_indices.remove(remove_original_index)
+            removed_features.append(remove_name)
+            removal_log.append({
+                "step": len(removal_log) + 1,
+                "feature": remove_name,
+                "reason": "VIF",
+                "value": float(max_vif_item["VIF"]),
+            })
+            continue
+
+        inference = coef_inference(X_current, y, beta, sigma2)
+        p_values = inference["p_values"]
+
+        candidate_p_values = [
+            {
+                "feature": current_feature_names[i],
+                "p_value": p_values[i],
+                "position": i,
+                "original_index": selected_indices[i],
+            }
+            for i in range(1, len(current_feature_names))
+        ]
+        max_p_item = max(candidate_p_values, key=lambda item: item["p_value"])
+
+        if max_p_item["p_value"] > p_threshold:
+            remove_name = max_p_item["feature"]
+            remove_original_index = max_p_item["original_index"]
+
+            selected_indices.remove(remove_original_index)
+            removed_features.append(remove_name)
+            removal_log.append({
+                "step": len(removal_log) + 1,
+                "feature": remove_name,
+                "reason": "p-value",
+                "value": float(max_p_item["p_value"]),
+            })
+            continue
+
+        break
+
+    X_final = [[row[i] for i in selected_indices] for row in X]
+    beta_final, sigma2_final = ols_fit(X_final, y)
+
+    return {
+        "beta": beta_final,
+        "sigma2": sigma2_final,
+        "selected_features": [feature_names[i] for i in selected_indices],
+        "selected_indices": selected_indices,
+        "removed_features": removed_features,
+        "removal_log": removal_log,
+    }
 
 
 def select_best_lambda(X, y, k=5, lambdas=None):
@@ -239,11 +386,12 @@ def prepare_air_quality_data(data_path=DATA_PATH, test_size=0.2):
 
 def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     """
-    Train OLS co ban, Ridge(lambda tot nhat) va Bayesian Linear Regression,
-    sau do danh gia tren test set.
+    Train OLS co ban, OLS chon bien, Ridge(lambda tot nhat) va Bayesian
+    Linear Regression, sau do danh gia tren test set.
 
     Returns:
-        dict gom best_lambda, cv_results, metrics_table, models, data
+        dict gom best_lambda, cv_results, metrics_table, selection_result,
+        models, predictions, data
     """
     data = prepare_air_quality_data(data_path=data_path)
 
@@ -255,6 +403,15 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     )
 
     beta_ols, sigma2_ols = ols_fit(data["X_train"], data["y_train"])
+    selection_result = ols_variable_selection(
+        data["X_train"],
+        data["y_train"],
+        data["feature_names"],
+    )
+    beta_ols_selected = selection_result["beta"]
+    selected_indices = selection_result["selected_indices"]
+    X_test_selected = [[row[i] for i in selected_indices] for row in data["X_test"]]
+
     beta_ridge = ridge_fit(data["X_train"], data["y_train"], best_lambda)
     posterior_bayes = bayesian_linear_fit(
         data["X_train"],
@@ -265,12 +422,17 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     )
 
     y_pred_ols = predict(data["X_test"], beta_ols)
+    y_pred_ols_selected = predict(X_test_selected, beta_ols_selected)
     y_pred_ridge = predict(data["X_test"], beta_ridge)
     y_pred_bayes = bayesian_predict(data["X_test"], posterior_bayes)
 
     metrics_table = pd.DataFrame(
         [
             {"Model": "OLS", **compute_metrics(data["y_test"], y_pred_ols)},
+            {
+                "Model": "OLS (Variable Selection)",
+                **compute_metrics(data["y_test"], y_pred_ols_selected),
+            },
             {
                 "Model": f"Ridge (lambda={best_lambda:.6g})",
                 **compute_metrics(data["y_test"], y_pred_ridge),
@@ -290,18 +452,111 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
         "best_lambda": best_lambda,
         "cv_results": cv_results,
         "metrics_table": metrics_table,
+        "selection_result": selection_result,
         "models": {
             "ols": {"beta": beta_ols, "sigma2": sigma2_ols},
+            "ols_selected": {
+                "beta": beta_ols_selected,
+                "sigma2": selection_result["sigma2"],
+                "selected_indices": selected_indices,
+            },
             "ridge": {"beta": beta_ridge, "lambda": best_lambda},
             "bayesian": posterior_bayes,
         },
         "predictions": {
             "ols": y_pred_ols,
+            "ols_selected": y_pred_ols_selected,
             "ridge": y_pred_ridge,
             "bayesian": y_pred_bayes,
         },
         "data": data,
     }
+
+
+def test_vif_no_multicollinearity():
+    """VIF nho khi cac bien khong gan phu thuoc tuyen tinh."""
+    X = [
+        [1.0, -2.0, 4.0],
+        [1.0, -1.0, 1.0],
+        [1.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0],
+        [1.0, 2.0, 4.0],
+        [1.0, 3.0, 9.0],
+    ]
+
+    vifs = vif_values(X, ["intercept", "x1", "x2"])
+
+    assert all(item["VIF"] < 2.0 for item in vifs)
+    print("TEST 1 PASSED: VIF thap khi khong co da cong tuyen manh")
+
+
+def test_vif_high_multicollinearity():
+    """VIF cao khi co 2 bien gan phu thuoc tuyen tinh."""
+    X = []
+    for i in range(1, 15):
+        x1 = float(i)
+        noise = 0.01 if i % 2 == 0 else -0.01
+        x2 = x1 + noise
+        X.append([1.0, x1, x2])
+
+    vifs = vif_values(X, ["intercept", "x1", "x2"])
+
+    assert any(item["VIF"] > 10.0 for item in vifs)
+    print("TEST 2 PASSED: VIF cao khi bien gan trung tuyen tinh")
+
+
+def test_variable_selection_removes_redundant():
+    """OLS chon bien loai duoc bien da cong tuyen."""
+    X = []
+    y = []
+    for i in range(1, 18):
+        x1 = float(i)
+        noise = 0.01 if i % 2 == 0 else -0.01
+        x2 = x1 + noise
+        X.append([1.0, x1, x2])
+        y.append([1.0 + 2.0 * x1 + 0.05 * noise])
+
+    result = ols_variable_selection(
+        X,
+        y,
+        ["intercept", "x1", "x2"],
+        p_threshold=1.0,
+        vif_threshold=10.0,
+    )
+
+    assert len(result["removed_features"]) >= 1
+    assert result["removal_log"][0]["reason"] == "VIF"
+    print("TEST 3 PASSED: variable selection loai bien du thua theo VIF")
+
+
+def test_variable_selection_keeps_significant():
+    """OLS chon bien giu lai bien co y nghia."""
+    X = []
+    y = []
+    for i in range(1, 18):
+        x1 = float(i)
+        x2 = 1.0 if i % 2 == 0 else -1.0
+        noise = 0.05 if i % 3 == 0 else -0.03
+        X.append([1.0, x1, x2])
+        y.append([1.0 + 2.0 * x1 + noise])
+
+    result = ols_variable_selection(
+        X,
+        y,
+        ["intercept", "x1", "x2"],
+        p_threshold=0.05,
+        vif_threshold=10.0,
+    )
+
+    assert "x1" in result["selected_features"]
+    print("TEST 4 PASSED: variable selection giu bien co y nghia")
+
+
+def run_variable_selection_tests():
+    test_vif_no_multicollinearity()
+    test_vif_high_multicollinearity()
+    test_variable_selection_removes_redundant()
+    test_variable_selection_keeps_significant()
 
 
 def main():
