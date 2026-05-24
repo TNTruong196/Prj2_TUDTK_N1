@@ -125,3 +125,50 @@ def coef_inference(X, y, beta_hat, sigma2):
         "p_values": p_values,
         "CI_95": conf_intervals
     }
+
+
+# X: Ma tran thiet ke kich thuoc nx(p+1) voi cot dau toan 1
+# Tra ve: Danh sach VIF cho tung bien doc lap (bo qua intercept o cot dau)
+def vif(X):
+    if not is_matrix(X):
+        raise ValueError("X phai la ma tran")
+        
+    n = len(X)
+    n_cols = len(X[0])
+    
+    if n_cols < 2:
+        return []
+        
+    vif_list = []
+    for j in range(1, n_cols):
+        # Y_j la cot j cua X (kich thuoc nx1)
+        y_j = [[row[j]] for row in X]
+        # X_j la ma tran con lai cua X (kich thuoc nxp), giu lai cot intercept o index 0
+        X_j = [[row[k] for k in range(n_cols) if k != j] for row in X]
+        
+        if len(X_j[0]) == 1:
+            # Chi co 1 bien doc lap duy nhat, nghia la X_j chi chua intercept. VIF = 1.0.
+            vif_val = 1.0
+        else:
+            # Hoi quy y_j theo X_j
+            beta_j, _ = ols_fit(X_j, y_j)
+            
+            # Tinh gia tri du doan
+            y_hat_j = mat_mul(X_j, beta_j)
+            
+            # Tinh R-squared bang cach goi model_metrics.
+            # p_j la so dac trung cua X_j (khong tinh intercept), bang len(X_j[0]) - 1
+            p_j = len(X_j[0]) - 1
+            metrics_j = model_metrics(y_j, y_hat_j, p_j)
+            r2_j = metrics_j["R_squared"]
+            
+            denominator = 1.0 - r2_j
+            if denominator <= 1e-12:
+                vif_val = float('inf')
+            else:
+                vif_val = 1.0 / denominator
+                
+        vif_list.append(vif_val)
+        
+    return vif_list
+
