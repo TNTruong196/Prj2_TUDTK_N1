@@ -72,8 +72,13 @@ def model_metrics(y, y_hat, p):
     
     # Kiem dinh F
     # F = [(TSS-RSS)/p] / [RSS/(n-p-1)]
-    f_stat = ((tss - rss) / p) / (rss / (n - p - 1))
-    f_p_val = 1 - stats.f.cdf(f_stat, p, n - p - 1)
+    denominator = (rss / (n - p - 1))
+    if denominator < 1e-15:
+        f_stat = float('inf')
+        f_p_val = 0.0
+    else:
+        f_stat = ((tss - rss) / p) / denominator
+        f_p_val = 1 - stats.f.cdf(f_stat, p, n - p - 1)
     
     return {
         "RSS": rss,
@@ -172,3 +177,212 @@ def vif(X):
         
     return vif_list
 
+
+# Test
+
+import unittest
+import numpy as np
+
+def _almost_equal_matrix(A, B, tol=1e-6):
+    if len(A) != len(B) or len(A[0]) != len(B[0]):
+        return False
+    for i in range(len(A)):
+        for j in range(len(A[0])):
+            if abs(A[i][j] - B[i][j]) > tol:
+                return False
+    return True
+
+class TestOLSImplementation(unittest.TestCase):
+
+    def setUp(self):
+        # Dữ liệu giả lập đơn giản
+        self.X = [
+            [1.0, 1.0],
+            [1.0, 2.0],
+            [1.0, 3.0],
+            [1.0, 4.0],
+        ]
+        self.y = [[2.0], [4.1], [5.9], [8.2]]
+        self.beta_hat, self.sigma2 = ols_fit(self.X, self.y)
+
+    # ==================================
+    # Tests for hat_matrix()
+    # ==================================
+    def test_hat_matrix_is_symmetric(self):
+        """Kiểm tra tính chất đối xứng của ma trận Hat (H^T = H)."""
+        H = hat_matrix(self.X)
+        H_t = mat_trans(H)
+        self.assertTrue(_almost_equal_matrix(H, H_t), "Ma trận Hat phải đối xứng")
+        print("TEST PASSED: hat_matrix() đối xứng (H^T = H)")
+
+    def test_hat_matrix_is_idempotent(self):
+        """Kiểm tra tính chất lũy đẳng của ma trận Hat (H*H = H)."""
+        H = hat_matrix(self.X)
+        H_squared = mat_mul(H, H)
+        self.assertTrue(_almost_equal_matrix(H, H_squared), "Ma trận Hat phải lũy đẳng")
+        print("TEST PASSED: hat_matrix() lũy đẳng (H*H = H)")
+
+    # ==================================
+    # Tests for coef_inference()
+    # ==================================
+    def test_coef_inference_structure(self):
+        """Kiểm tra cấu trúc đầu ra của hàm coef_inference."""
+        inference = coef_inference(self.X, self.y, self.beta_hat, self.sigma2)
+        num_coefs = len(self.beta_hat)
+        
+        self.assertIn("Standard_Errors", inference)
+        self.assertIn("t_statistics", inference)
+        self.assertIn("p_values", inference)
+        self.assertIn("CI_95", inference)
+        
+        self.assertEqual(len(inference["Standard_Errors"]), num_coefs)
+        self.assertEqual(len(inference["t_statistics"]), num_coefs)
+        self.assertEqual(len(inference["p_values"]), num_coefs)
+        self.assertEqual(len(inference["CI_95"]), num_coefs)
+        print("TEST PASSED: coef_inference() trả về đúng cấu trúc")
+
+    def test_coef_inference_against_statsmodels(self):
+        """So sánh kết quả standard errors và t-stats với thư viện statsmodels."""
+        import statsmodels.api as sm
+
+        # Chuyển sang numpy array để dùng statsmodels
+        X_np = np.array(self.X)
+        y_np = np.array(self.y)
+        
+        # Fit mô hình bằng statsmodels
+        sm_model = sm.OLS(y_np, X_np).fit()
+        
+        # Lấy kết quả từ hàm tự cài đặt
+        custom_inference = coef_inference(self.X, self.y, self.beta_hat, self.sigma2)
+        
+        # So sánh Standard Errors
+        for i in range(len(self.beta_hat)):
+            custom_se = custom_inference["Standard_Errors"][i]
+            sm_se = sm_model.bse[i]
+            self.assertAlmostEqual(custom_se, sm_se, places=5, msg=f"SE của beta_{i} không khớp")
+
+        # So sánh t-statistics
+        for i in range(len(self.beta_hat)):
+            custom_t = custom_inference["t_statistics"][i]
+            sm_t = sm_model.tvalues[i]
+            self.assertAlmostEqual(custom_t, sm_t, places=5, msg=f"t-statistic của beta_{i} không khớp")
+            
+        print("✅ TEST PASSED: coef_inference() cho kết quả khớp với statsmodels")
+
+class TestVIF(unittest.TestCase):
+    
+    def test_vif_no_multicollinearity(self):
+        """
+        Verify VIF is low (close to 1.0) when independent variables are not correlated.
+        """
+        # Independent variables: x1 and x2 (nearly orthogonal)
+        # design matrix X contains intercept column at index 0
+        X = [
+            [1.0, -2.0, 4.0],
+            [1.0, -1.0, 1.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [1.0, 2.0, 4.0],
+            [1.0, 3.0, 9.0]
+        ]
+        
+        vif_results = vif(X)
+        
+        # There should be 2 VIF values (one for x1, one for x2)
+        self.assertEqual(len(vif_results), 2)
+        # All VIFs should be low (< 2.0)
+        for val in vif_results:
+            self.assertLess(val, 2.0)
+            self.assertGreaterEqual(val, 1.0)
+
+    def test_vif_high_multicollinearity(self):
+        """
+        Verify VIF is high (> 10.0) when independent variables are highly correlated.
+        """
+        # x2 is x1 + tiny noise, which creates strong multicollinearity
+        X = []
+        for i in range(1, 15):
+            x1 = float(i)
+            noise = 0.01 if i % 2 == 0 else -0.01
+            x2 = x1 + noise
+            X.append([1.0, x1, x2])
+            
+        vif_results = vif(X)
+        
+        self.assertEqual(len(vif_results), 2)
+        # At least one VIF should be greater than 10.0 (multicollinearity threshold)
+        self.assertTrue(any(val > 10.0 for val in vif_results))
+
+    def test_vif_against_sklearn(self):
+        from sklearn.linear_model import LinearRegression
+
+        """
+        Verify the mathematical correctness of our VIF values against scikit-learn LinearRegression.
+        """
+        X = [
+            [1.0, 1.2, 3.4, 2.1],
+            [1.0, 2.3, 1.1, 4.5],
+            [1.0, 0.5, 4.2, 1.3],
+            [1.0, 3.1, 2.2, 5.0],
+            [1.0, 4.0, 1.5, 6.2],
+            [1.0, 1.8, 3.0, 2.9]
+        ]
+        
+        custom_vifs = vif(X)
+        self.assertEqual(len(custom_vifs), 3)
+        
+        # Calculate reference VIF using sklearn
+        X_arr = np.array(X)
+        for j in range(1, 4):
+            y_j = X_arr[:, j]
+            # Select columns other than intercept (0) and the current column j
+            cols_j = [k for k in range(X_arr.shape[1]) if k != j]
+            X_j = X_arr[:, cols_j]
+            
+            # Fit regression
+            # fit_intercept=False because X_j already contains the intercept column at index 0 (if j != 0)
+            model = LinearRegression(fit_intercept=False)
+            model.fit(X_j, y_j)
+            
+            # Compute R-squared
+            y_j_hat = model.predict(X_j)
+            rss = np.sum((y_j - y_j_hat) ** 2)
+            tss = np.sum((y_j - np.mean(y_j)) ** 2)
+            r2 = 1.0 - (rss / tss)
+            
+            ref_vif = 1.0 / (1.0 - r2)
+            
+            self.assertAlmostEqual(custom_vifs[j-1], ref_vif, places=5)
+
+    def test_vif_perfect_collinearity(self):
+        """Kiểm tra VIF khi có đa cộng tuyến hoàn hảo (phải trả về inf)."""
+        X = [
+            [1.0, 1.0, 2.0],
+            [1.0, 2.0, 4.0],
+            [1.0, 3.0, 6.0]
+        ]
+        vif_results = vif(X)
+        self.assertEqual(vif_results[1], float('inf'))
+
+class TestModelMetrics(unittest.TestCase):
+    def test_metrics_simple_case(self):
+        y = [[1.0], [2.0], [3.0]]
+        y_hat = [[1.1], [1.9], [3.0]]
+        metrics = model_metrics(y, y_hat, 1)
+        self.assertGreater(metrics["R_squared"], 0.9)
+        self.assertIn("F_statistic", metrics)
+
+    def test_metrics_perfect_fit(self):
+        y = [[1.0], [2.0]]
+        y_hat = [[1.0], [2.0]]
+        # P=1, n=2 => df residuals = 2-1-1 = 0. Warning: this might trigger div by zero in some impls, 
+        # but let's check with n=3
+        y = [[1.0], [2.0], [3.0]]
+        y_hat = [[1.0], [2.0], [3.0]]
+        metrics = model_metrics(y, y_hat, 1)
+        self.assertEqual(metrics["R_squared"], 1.0)
+        self.assertEqual(metrics["RSS"], 0.0)
+
+if __name__ == '__main__':
+    print("BẮT ĐẦU CHẠY CÁC BÀI TEST CHO OLS_IMPLEMENTATION VÀ VIF...")
+    unittest.main()

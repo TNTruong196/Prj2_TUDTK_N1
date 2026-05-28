@@ -97,3 +97,51 @@ def residual_plots(X, y, beta_hat, show=True):
         plt.show()
 
     return fig, axes
+
+
+# Test
+
+import unittest
+import matplotlib
+matplotlib.use("Agg")
+
+class TestResidualPlots(unittest.TestCase):
+    def setUp(self):
+        self.X = [
+            [1.0, 2.0, 1.5],
+            [1.0, 3.0, 2.1],
+            [1.0, 4.0, 2.8],
+            [1.0, 5.0, 4.3],
+            [1.0, 6.0, 5.2],
+        ]
+        self.y = [
+            [2.6],
+            [4.2],
+            [6.0],
+            [8.7],
+            [10.4],
+        ]
+        # Sử dụng hàm ols_fit trực tiếp từ file hiện tại
+        try:
+            from part1.ols_implementation import ols_fit
+        except ModuleNotFoundError:
+            from ols_implementation import ols_fit
+        self.beta_hat, _ = ols_fit(self.X, self.y)
+
+    def test_residual_plots_returns_axes(self):
+        fig, axes = residual_plots(self.X, self.y, self.beta_hat, show=False)
+        self.assertIsNotNone(fig)
+        self.assertEqual(len(axes), 2)
+        self.assertEqual(len(axes[0]), 2)
+        self.assertEqual(len(axes[1]), 2)
+
+    def test_residual_plots_handles_noise(self):
+        y_noisy = [[row[0] + 0.1] for row in self.y]
+        fig, axes = residual_plots(self.X, y_noisy, self.beta_hat, show=False)
+        self.assertTrue(hasattr(fig, "savefig"))
+        self.assertTrue(all(hasattr(ax, "plot") for ax in axes.flatten()))
+
+
+if __name__ == "__main__":
+    print("BẮT ĐẦU CHẠY CÁC BÀI TEST CHO RESIDUAL_ANALYSIS...")
+    unittest.main()

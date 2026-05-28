@@ -116,3 +116,58 @@ def mat_scalar_mul(A, scalar):
     C = [[A[i][j] * scalar for j in range(n)] for i in range(m)]
     
     return C     
+
+# UNIT TESTS
+import unittest
+
+class TestMatrixHelper(unittest.TestCase):
+    
+    def test_mat_mul(self):
+        # Test 1: Ma tran vuong x Ma tran vuong
+        A = [[1, 2], [3, 4]]
+        B = [[5, 6], [7, 8]]
+        self.assertEqual(mat_mul(A, B), [[19, 22], [43, 50]])
+        
+        # Test 2: Ma tran chu nhat
+        C = [[1, 2, 3], [4, 5, 6]] # 2x3
+        D = [[7, 8], [9, 10], [11, 12]] # 3x2
+        self.assertEqual(mat_mul(C, D), [[58, 64], [139, 154]])
+
+    def test_mat_inverse(self):
+        # Test 1: Ma tran 2x2
+        A = [[4, 7], [2, 6]]
+        # A^-1 = 1/10 * [[6, -7], [-2, 4]] = [[0.6, -0.7], [-0.2, 0.4]]
+        invA = mat_inverse(A)
+        self.assertAlmostEqual(invA[0][0], 0.6)
+        self.assertAlmostEqual(invA[1][1], 0.4)
+        
+        # Test 2: Ma tran 3x3 yeu cau hoan doi dong (pivot = 0)
+        B = [[0, 1, 2], [1, 0, 3], [4, -3, 8]]
+        invB = mat_inverse(B)
+        # Kiem tra bang cach nhan lai voi ma tran goc xem co ra don vi khong
+        identity = mat_mul(B, invB)
+        for i in range(3):
+            for j in range(3):
+                self.assertAlmostEqual(identity[i][j], 1.0 if i==j else 0.0)
+
+    def test_mat_add_sub(self):
+        A = [[1, 2], [3, 4]]
+        B = [[5, 6], [7, 8]]
+        # Add
+        self.assertEqual(mat_add(A, B), [[6, 8], [10, 12]])
+        # Sub
+        self.assertEqual(mat_sub(B, A), [[4, 4], [4, 4]])
+
+    def test_mat_trans(self):
+        # Test 1: Vuong
+        self.assertEqual(mat_trans([[1, 2], [3, 4]]), [[1, 3], [2, 4]])
+        # Test 2: Chu nhat
+        self.assertEqual(mat_trans([[1, 2, 3], [4, 5, 6]]), [[1, 4], [2, 5], [3, 6]])
+
+    def test_is_matrix(self):
+        self.assertTrue(is_matrix([[1, 2], [3, 4]]))
+        self.assertFalse(is_matrix([1, 2]))
+        self.assertFalse(is_matrix([[1, 2], [3]])) # Khong deu
+
+if __name__ == "__main__":
+    unittest.main()
