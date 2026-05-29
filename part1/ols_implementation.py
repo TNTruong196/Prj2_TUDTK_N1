@@ -181,7 +181,6 @@ def vif(X):
 # Test
 
 import unittest
-import numpy as np
 
 def _almost_equal_matrix(A, B, tol=1e-6):
     if len(A) != len(B) or len(A[0]) != len(B[0]):
@@ -244,6 +243,7 @@ class TestOLSImplementation(unittest.TestCase):
     def test_coef_inference_against_statsmodels(self):
         """So sánh kết quả standard errors và t-stats với thư viện statsmodels."""
         import statsmodels.api as sm
+        import numpy as np
 
         # Chuyển sang numpy array để dùng statsmodels
         X_np = np.array(self.X)
@@ -315,6 +315,7 @@ class TestVIF(unittest.TestCase):
 
     def test_vif_against_sklearn(self):
         from sklearn.linear_model import LinearRegression
+        import numpy as np
 
         """
         Verify the mathematical correctness of our VIF values against scikit-learn LinearRegression.

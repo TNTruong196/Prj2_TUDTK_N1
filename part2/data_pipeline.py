@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 class DataPipeline:
     """
@@ -91,7 +90,7 @@ class DataPipeline:
         # vì đã chọn chiến lược bảo toàn dữ liệu (imputation cho missing values).
         # Loại bỏ outlier sẽ mâu thuẫn — vừa impute để giữ data, vừa xóa data.
         X_temp = X_reduced.fillna(self.impute_values)
-        numeric_cols = X_temp.select_dtypes(include=[np.number]).columns
+        numeric_cols = X_temp.select_dtypes(include=['number']).columns
         for col in numeric_cols:
             if col not in ['Month', 'DayOfWeek', 'Hour']:  # Không clip biến thời gian
                 Q1 = X_temp[col].quantile(0.25)
@@ -156,6 +155,7 @@ class DataPipeline:
 from sklearn.model_selection import train_test_split
 
 def run_tests():
+    import numpy as np
     print("="*40)
     print("BẮT ĐẦU TEST DATAPIPELINE")
     print("="*40)
