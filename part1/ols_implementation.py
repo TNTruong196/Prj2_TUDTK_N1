@@ -204,6 +204,64 @@ class TestOLSImplementation(unittest.TestCase):
         self.y = [[2.0], [4.1], [5.9], [8.2]]
         self.beta_hat, self.sigma2 = ols_fit(self.X, self.y)
 
+        # Dữ liệu giả lập cho so sánh với sklearn/numpy
+        import numpy as np
+        self.X_list = [
+            [1.0, 2.5, 1.2],
+            [1.0, 1.2, 0.8],
+            [1.0, 3.8, 2.5],
+            [1.0, 4.1, 3.1],
+            [1.0, 5.5, 4.0],
+            [1.0, 0.5, 0.1]
+        ]
+        self.y_list = [
+            [7.2],
+            [4.5],
+            [10.1],
+            [11.0],
+            [14.8],
+            [2.1]
+        ]
+        self.X_arr = np.array(self.X_list)
+        self.y_arr = np.array(self.y_list)
+
+    # ==================================
+    # Tests for ols_fit()
+    # ==================================
+    def test_ols_against_sklearn(self):
+        """Verify custom ols_fit beta coefficients and variance against scikit-learn."""
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        custom_beta, custom_sigma_sqr = ols_fit(self.X_list, self.y_list)
+        custom_beta_flat = [b[0] for b in custom_beta] 
+        
+        model = LinearRegression(fit_intercept=False)
+        model.fit(self.X_arr, self.y_arr)
+        sklearn_beta_flat = model.coef_[0] 
+        
+        np.testing.assert_almost_equal(custom_beta_flat, sklearn_beta_flat, decimal=5)
+        
+        sklearn_predictions = model.predict(self.X_arr)
+        sklearn_rss = np.sum((self.y_arr - sklearn_predictions) ** 2)
+        n = len(self.X_list)
+        p_plus_1 = len(self.X_list[0])
+        sklearn_sigma_sqr = sklearn_rss / (n - p_plus_1)
+        
+        self.assertAlmostEqual(custom_sigma_sqr, sklearn_sigma_sqr, places=5)
+        print("TEST PASSED: ols_fit() khớp với sklearn")
+
+    def test_ols_against_numpy_lstsq(self):
+        """Verify custom ols_fit beta coefficients against numpy's least squares solver."""
+        import numpy as np
+        custom_beta, _ = ols_fit(self.X_list, self.y_list)
+        custom_beta_flat = [b[0] for b in custom_beta]
+        
+        numpy_beta, residuals, rank, s = np.linalg.lstsq(self.X_arr, self.y_arr, rcond=None)
+        numpy_beta_flat = numpy_beta.flatten()
+        
+        np.testing.assert_almost_equal(custom_beta_flat, numpy_beta_flat, decimal=5)
+        print("TEST PASSED: ols_fit() khớp với numpy.linalg.lstsq")
+
     # ==================================
     # Tests for hat_matrix()
     # ==================================
@@ -267,7 +325,7 @@ class TestOLSImplementation(unittest.TestCase):
             sm_t = sm_model.tvalues[i]
             self.assertAlmostEqual(custom_t, sm_t, places=5, msg=f"t-statistic của beta_{i} không khớp")
             
-        print("✅ TEST PASSED: coef_inference() cho kết quả khớp với statsmodels")
+        print("TEST PASSED: coef_inference() cho kết quả khớp với statsmodels")
 
 class TestVIF(unittest.TestCase):
     
