@@ -102,8 +102,6 @@ def residual_plots(X, y, beta_hat, show=True):
 # Test
 
 import unittest
-import matplotlib
-matplotlib.use("Agg")
 
 class TestResidualPlots(unittest.TestCase):
     def setUp(self):
@@ -143,5 +141,7 @@ class TestResidualPlots(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use("Agg")
     print("BẮT ĐẦU CHẠY CÁC BÀI TEST CHO RESIDUAL_ANALYSIS...")
     unittest.main()
