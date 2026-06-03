@@ -1,4 +1,6 @@
 # Chu y: Toan bo ham helper duoi day co dau vao va dau ra la 2D list
+import unittest
+
 
 def mat_mul(A, B):
     if not is_matrix(A) or not is_matrix(B):
@@ -117,85 +119,75 @@ def mat_scalar_mul(A, scalar):
     
     return C     
 
-def test_mat_mul():
-    # Test 1: Ma tran vuong x Ma tran vuong
-    A = [[1, 2], [3, 4]]
-    B = [[5, 6], [7, 8]]
-    assert mat_mul(A, B) == [[19, 22], [43, 50]]
-    
-    # Test 2: Ma tran chu nhat
-    C = [[1, 2, 3], [4, 5, 6]] # 2x3
-    D = [[7, 8], [9, 10], [11, 12]] # 3x2
-    assert mat_mul(C, D) == [[58, 64], [139, 154]]
+class TestMatrixHelper(unittest.TestCase):
+    def test_mat_mul(self):
+        # Test 1: Ma tran vuong x Ma tran vuong
+        A = [[1, 2], [3, 4]]
+        B = [[5, 6], [7, 8]]
+        self.assertEqual(mat_mul(A, B), [[19, 22], [43, 50]])
+        
+        # Test 2: Ma tran chu nhat
+        C = [[1, 2, 3], [4, 5, 6]] # 2x3
+        D = [[7, 8], [9, 10], [11, 12]] # 3x2
+        self.assertEqual(mat_mul(C, D), [[58, 64], [139, 154]])
 
-def test_mat_sub():
-    # Test 1: Tru hai ma tran 2x2
-    A = [[1, 2], [3, 4]]
-    B = [[5, 6], [7, 8]]
-    assert mat_sub(B, A) == [[4, 4], [4, 4]]
-    
-    # Test 2: Tru hai ma tran 1x2
-    assert mat_sub([[10, 20]], [[3, 5]]) == [[7, 15]]
+    def test_mat_sub(self):
+        # Test 1: Tru hai ma tran 2x2
+        A = [[1, 2], [3, 4]]
+        B = [[5, 6], [7, 8]]
+        self.assertEqual(mat_sub(B, A), [[4, 4], [4, 4]])
+        
+        # Test 2: Tru hai ma tran 1x2
+        self.assertEqual(mat_sub([[10, 20]], [[3, 5]]), [[7, 15]])
 
-def test_mat_inverse():
-    # Test 1: Ma tran 2x2
-    A = [[4, 7], [2, 6]]
-    invA = mat_inverse(A)
-    assert abs(invA[0][0] - 0.6) < 1e-9
-    assert abs(invA[1][1] - 0.4) < 1e-9
-    
-    # Test 2: Ma tran 3x3 yeu cau hoan doi dong
-    B = [[0, 1, 2], [1, 0, 3], [4, -3, 8]]
-    invB = mat_inverse(B)
-    identity = mat_mul(B, invB)
-    for i in range(3):
-        for j in range(3):
-            assert abs(identity[i][j] - (1.0 if i == j else 0.0)) < 1e-9
+    def test_mat_inverse(self):
+        # Test 1: Ma tran 2x2
+        A = [[4, 7], [2, 6]]
+        invA = mat_inverse(A)
+        self.assertAlmostEqual(invA[0][0], 0.6, places=9)
+        self.assertAlmostEqual(invA[1][1], 0.4, places=9)
+        
+        # Test 2: Ma tran 3x3 yeu cau hoan doi dong
+        B = [[0, 1, 2], [1, 0, 3], [4, -3, 8]]
+        invB = mat_inverse(B)
+        identity = mat_mul(B, invB)
+        for i in range(3):
+            for j in range(3):
+                self.assertAlmostEqual(identity[i][j], 1.0 if i == j else 0.0, places=9)
 
-def test_mat_trans():
-    # Test 1: Vuong
-    assert mat_trans([[1, 2], [3, 4]]) == [[1, 3], [2, 4]]
-    # Test 2: Chu nhat
-    assert mat_trans([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]
+    def test_mat_trans(self):
+        # Test 1: Vuong
+        self.assertEqual(mat_trans([[1, 2], [3, 4]]), [[1, 3], [2, 4]])
+        # Test 2: Chu nhat
+        self.assertEqual(mat_trans([[1, 2, 3], [4, 5, 6]]), [[1, 4], [2, 5], [3, 6]])
 
-def test_is_matrix():
-    # Test 1: Ma tran hop le
-    assert is_matrix([[1, 2], [3, 4]]) is True
-    # Test 2: Khong hop le
-    assert is_matrix([1, 2]) is False
-    assert is_matrix([[1, 2], [3]]) is False
+    def test_is_matrix(self):
+        # Test 1: Ma tran hop le
+        self.assertTrue(is_matrix([[1, 2], [3, 4]]))
+        # Test 2: Khong hop le
+        self.assertFalse(is_matrix([1, 2]))
+        self.assertFalse(is_matrix([[1, 2], [3]]))
 
-def test_mat_identity():
-    # Test 1: Don vi 2x2
-    assert mat_identity(2) == [[1, 0], [0, 1]]
-    # Test 2: Don vi 3x3
-    assert mat_identity(3) == [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    def test_mat_identity(self):
+        # Test 1: Don vi 2x2
+        self.assertEqual(mat_identity(2), [[1, 0], [0, 1]])
+        # Test 2: Don vi 3x3
+        self.assertEqual(mat_identity(3), [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
-def test_mat_add():
-    # Test 1: Cong hai ma tran 2x2
-    A = [[1, 2], [3, 4]]
-    B = [[5, 6], [7, 8]]
-    assert mat_add(A, B) == [[6, 8], [10, 12]]
-    # Test 2: Cong hai ma tran 1x1
-    assert mat_add([[2]], [[3]]) == [[5]]
+    def test_mat_add(self):
+        # Test 1: Cong hai ma tran 2x2
+        A = [[1, 2], [3, 4]]
+        B = [[5, 6], [7, 8]]
+        self.assertEqual(mat_add(A, B), [[6, 8], [10, 12]])
+        # Test 2: Cong hai ma tran 1x1
+        self.assertEqual(mat_add([[2]], [[3]]), [[5]])
 
-def test_mat_scalar_mul():
-    # Test 1: Nhan ma tran voi scalar duong
-    A = [[1, 2], [3, 4]]
-    assert mat_scalar_mul(A, 2) == [[2, 4], [6, 8]]
-    # Test 2: Nhan ma tran voi scalar am
-    assert mat_scalar_mul(A, -1) == [[-1, -2], [-3, -4]]
-
-def main():
-    test_mat_mul()
-    test_mat_sub()
-    test_mat_inverse()
-    test_mat_trans()
-    test_is_matrix()
-    test_mat_identity()
-    test_mat_add()
-    test_mat_scalar_mul()
-    print("All tests passed in matrix_helper.py!")
+    def test_mat_scalar_mul(self):
+        # Test 1: Nhan ma tran voi scalar duong
+        A = [[1, 2], [3, 4]]
+        self.assertEqual(mat_scalar_mul(A, 2), [[2, 4], [6, 8]])
+        # Test 2: Nhan ma tran voi scalar am
+        self.assertEqual(mat_scalar_mul(A, -1), [[-1, -2], [-3, -4]])
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

@@ -1,5 +1,6 @@
 import math
 import scipy.stats as stats
+import unittest
 
 try:
     from part1.matrix_helper import *
@@ -189,98 +190,87 @@ def _almost_equal_matrix(A, B, tol=1e-6):
                 return False
     return True
 
-def test_ols_fit():
-    # Test case 1: perfect fit y = 2*x
-    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
-    y = [[2.0], [4.0], [6.0]]
-    beta, sigma2 = ols_fit(X, y)
-    assert abs(beta[0][0] - 0.0) < 1e-9
-    assert abs(beta[1][0] - 2.0) < 1e-9
+class TestOLSImplementation(unittest.TestCase):
+    def test_ols_fit(self):
+        # Test case 1: perfect fit y = 2*x
+        X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+        y = [[2.0], [4.0], [6.0]]
+        beta, sigma2 = ols_fit(X, y)
+        self.assertAlmostEqual(beta[0][0], 0.0, places=9)
+        self.assertAlmostEqual(beta[1][0], 2.0, places=9)
 
-    # Test case 2: check if invalid dimensions raise ValueError
-    try:
-        ols_fit(X, [[1.0], [2.0]])
-        assert False, "Should raise ValueError due to dimension mismatch"
-    except ValueError:
-        pass
+        # Test case 2: check if invalid dimensions raise ValueError
+        with self.assertRaises(ValueError):
+            ols_fit(X, [[1.0], [2.0]])
 
-def test_hat_matrix():
-    # Test case 1: Hat matrix is symmetric
-    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
-    H = hat_matrix(X)
-    H_t = mat_trans(H)
-    assert _almost_equal_matrix(H, H_t)
+    def test_hat_matrix(self):
+        # Test case 1: Hat matrix is symmetric
+        X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+        H = hat_matrix(X)
+        H_t = mat_trans(H)
+        self.assertTrue(_almost_equal_matrix(H, H_t))
 
-    # Test case 2: Hat matrix is idempotent (H * H = H)
-    H_sq = mat_mul(H, H)
-    assert _almost_equal_matrix(H, H_sq)
+        # Test case 2: Hat matrix is idempotent (H * H = H)
+        H_sq = mat_mul(H, H)
+        self.assertTrue(_almost_equal_matrix(H, H_sq))
 
-def test_model_metrics():
-    # Test case 1: perfect fit has R_squared = 1.0
-    y = [[1.0], [2.0], [3.0]]
-    y_hat = [[1.0], [2.0], [3.0]]
-    metrics = model_metrics(y, y_hat, 1)
-    assert abs(metrics["R_squared"] - 1.0) < 1e-9
+    def test_model_metrics(self):
+        # Test case 1: perfect fit has R_squared = 1.0
+        y = [[1.0], [2.0], [3.0]]
+        y_hat = [[1.0], [2.0], [3.0]]
+        metrics = model_metrics(y, y_hat, 1)
+        self.assertAlmostEqual(metrics["R_squared"], 1.0, places=9)
 
-    # Test case 2: check metrics key names and values for a simple imperfect fit
-    y_hat_imperfect = [[1.1], [1.9], [3.0]]
-    metrics_imperfect = model_metrics(y, y_hat_imperfect, 1)
-    assert "RSS" in metrics_imperfect
-    assert metrics_imperfect["R_squared"] > 0.9
+        # Test case 2: check metrics key names and values for a simple imperfect fit
+        y_hat_imperfect = [[1.1], [1.9], [3.0]]
+        metrics_imperfect = model_metrics(y, y_hat_imperfect, 1)
+        self.assertIn("RSS", metrics_imperfect)
+        self.assertGreater(metrics_imperfect["R_squared"], 0.9)
 
-def test_coef_inference():
-    # Test case 1: check output structure and size
-    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
-    y = [[2.0], [4.0], [6.0]]
-    beta, sigma2 = ols_fit(X, y)
-    inference = coef_inference(X, y, beta, 0.1)
-    assert "Standard_Errors" in inference
-    assert len(inference["Standard_Errors"]) == 2
+    def test_coef_inference(self):
+        # Test case 1: check output structure and size
+        X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+        y = [[2.0], [4.0], [6.0]]
+        beta, sigma2 = ols_fit(X, y)
+        inference = coef_inference(X, y, beta, 0.1)
+        self.assertIn("Standard_Errors", inference)
+        self.assertEqual(len(inference["Standard_Errors"]), 2)
 
-    # Test case 2: check p_values and CI bounds exist and have valid shape
-    assert len(inference["p_values"]) == 2
-    assert len(inference["CI_95"]) == 2
+        # Test case 2: check p_values and CI bounds exist and have valid shape
+        self.assertEqual(len(inference["p_values"]), 2)
+        self.assertEqual(len(inference["CI_95"]), 2)
 
-def test_vif():
-    # Test case 1: low multicollinearity
-    X = [
-        [1.0, -2.0, 4.0],
-        [1.0, -1.0, 1.0],
-        [1.0, 0.0, 0.0],
-        [1.0, 1.0, 1.0],
-        [1.0, 2.0, 4.0],
-        [1.0, 3.0, 9.0]
-    ]
-    vif_res = vif(X)
-    assert len(vif_res) == 2
-    assert all(val < 2.0 for val in vif_res)
+    def test_vif(self):
+        # Test case 1: low multicollinearity
+        X = [
+            [1.0, -2.0, 4.0],
+            [1.0, -1.0, 1.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [1.0, 2.0, 4.0],
+            [1.0, 3.0, 9.0]
+        ]
+        vif_res = vif(X)
+        self.assertEqual(len(vif_res), 2)
+        self.assertTrue(all(val < 2.0 for val in vif_res))
 
-    # Test case 2: perfect collinearity returns inf
-    X_perfect = [
-        [1.0, 1.0, 2.0],
-        [1.0, 2.0, 4.0],
-        [1.0, 3.0, 6.0]
-    ]
-    vif_res_perfect = vif(X_perfect)
-    assert vif_res_perfect[1] == float('inf')
+        # Test case 2: perfect collinearity returns inf
+        X_perfect = [
+            [1.0, 1.0, 2.0],
+            [1.0, 2.0, 4.0],
+            [1.0, 3.0, 6.0]
+        ]
+        vif_res_perfect = vif(X_perfect)
+        self.assertEqual(vif_res_perfect[1], float('inf'))
 
-def test__almost_equal_matrix():
-    # Test case 1: equal matrices return True
-    A = [[1.0, 2.0], [3.0, 4.0]]
-    B = [[1.0000001, 2.0], [3.0, 3.9999999]]
-    assert _almost_equal_matrix(A, B, tol=1e-5) is True
+    def test__almost_equal_matrix(self):
+        # Test case 1: equal matrices return True
+        A = [[1.0, 2.0], [3.0, 4.0]]
+        B = [[1.0000001, 2.0], [3.0, 3.9999999]]
+        self.assertTrue(_almost_equal_matrix(A, B, tol=1e-5))
 
-    # Test case 2: unequal matrices return False
-    assert _almost_equal_matrix(A, B, tol=1e-9) is False
-
-def main():
-    test_ols_fit()
-    test_hat_matrix()
-    test_model_metrics()
-    test_coef_inference()
-    test_vif()
-    test__almost_equal_matrix()
-    print("All tests passed in ols_implementation.py!")
+        # Test case 2: unequal matrices return False
+        self.assertFalse(_almost_equal_matrix(A, B, tol=1e-9))
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

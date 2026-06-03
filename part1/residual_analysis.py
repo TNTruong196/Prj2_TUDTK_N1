@@ -1,4 +1,6 @@
 import math
+import unittest
+
 
 import matplotlib.pyplot as plt
 import scipy.stats as stats
@@ -99,45 +101,45 @@ def residual_plots(X, y, beta_hat, show=True):
     return fig, axes
 
 
-def test_residual_plots():
-    # Test case 1: returns correct figure and axes components
-    X = [
-        [1.0, 2.0, 1.5],
-        [1.0, 3.0, 2.1],
-        [1.0, 4.0, 2.8],
-        [1.0, 5.0, 4.3],
-        [1.0, 6.0, 5.2],
-    ]
-    y = [
-        [2.6],
-        [4.2],
-        [6.0],
-        [8.7],
-        [10.4],
-    ]
-    try:
-        from part1.ols_implementation import ols_fit
-    except ModuleNotFoundError:
-        from ols_implementation import ols_fit
-    beta_hat, _ = ols_fit(X, y)
+class TestResidualAnalysis(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import matplotlib
+        matplotlib.use("Agg")
 
-    fig, axes = residual_plots(X, y, beta_hat, show=False)
-    assert fig is not None
-    assert len(axes) == 2
-    assert len(axes[0]) == 2
-    assert len(axes[1]) == 2
+    def test_residual_plots(self):
+        # Test case 1: returns correct figure and axes components
+        X = [
+            [1.0, 2.0, 1.5],
+            [1.0, 3.0, 2.1],
+            [1.0, 4.0, 2.8],
+            [1.0, 5.0, 4.3],
+            [1.0, 6.0, 5.2],
+        ]
+        y = [
+            [2.6],
+            [4.2],
+            [6.0],
+            [8.7],
+            [10.4],
+        ]
+        try:
+            from part1.ols_implementation import ols_fit
+        except ModuleNotFoundError:
+            from ols_implementation import ols_fit
+        beta_hat, _ = ols_fit(X, y)
 
-    # Test case 2: handles noise / other inputs and preserves savefig / plotting capability
-    y_noisy = [[row[0] + 0.1] for row in y]
-    fig2, axes2 = residual_plots(X, y_noisy, beta_hat, show=False)
-    assert hasattr(fig2, "savefig")
-    assert all(hasattr(ax, "plot") for ax in axes2.flatten())
+        fig, axes = residual_plots(X, y, beta_hat, show=False)
+        self.assertIsNotNone(fig)
+        self.assertEqual(len(axes), 2)
+        self.assertEqual(len(axes[0]), 2)
+        self.assertEqual(len(axes[1]), 2)
 
-def main():
-    import matplotlib
-    matplotlib.use("Agg")
-    test_residual_plots()
-    print("All tests passed in residual_analysis.py!")
+        # Test case 2: handles noise / other inputs and preserves savefig / plotting capability
+        y_noisy = [[row[0] + 0.1] for row in y]
+        fig2, axes2 = residual_plots(X, y_noisy, beta_hat, show=False)
+        self.assertTrue(hasattr(fig2, "savefig"))
+        self.assertTrue(all(hasattr(ax, "plot") for ax in axes2.flatten()))
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

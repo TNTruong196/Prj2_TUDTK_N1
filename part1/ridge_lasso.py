@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import math 
+import unittest
+
 
 try:
     from part1.matrix_helper import *
@@ -244,120 +246,104 @@ def _norm_without_intercept(beta):
           total += beta[i][0] ** 2
       return total ** 0.5
 
-def test_ridge_fit():
-    # Test case 1: Ridge fit with lambda = 0 should be close to OLS fit
-    try:
-        from part1.ols_implementation import ols_fit
-    except ModuleNotFoundError:
-        from ols_implementation import ols_fit
-    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
-    y = [[3.0], [5.0], [7.0], [9.0]]
-    beta_ridge = ridge_fit(X, y, lam=0)
-    beta_ols, _ = ols_fit(X, y)
-    assert _almost_equal_matrix(beta_ridge, beta_ols)
+class TestRidgeLasso(unittest.TestCase):
+    def test_ridge_fit(self):
+        # Test case 1: Ridge fit with lambda = 0 should be close to OLS fit
+        try:
+            from part1.ols_implementation import ols_fit
+        except ModuleNotFoundError:
+            from ols_implementation import ols_fit
+        X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
+        y = [[3.0], [5.0], [7.0], [9.0]]
+        beta_ridge = ridge_fit(X, y, lam=0)
+        beta_ols, _ = ols_fit(X, y)
+        self.assertTrue(_almost_equal_matrix(beta_ridge, beta_ols))
 
-    # Test case 2: Ridge coefficients should shrink compared to small lambda
-    beta_small = ridge_fit(X, y, 0.01)
-    beta_large = ridge_fit(X, y, 100.0)
-    assert _norm_without_intercept(beta_large) < _norm_without_intercept(beta_small)
+        # Test case 2: Ridge coefficients should shrink compared to small lambda
+        beta_small = ridge_fit(X, y, 0.01)
+        beta_large = ridge_fit(X, y, 100.0)
+        self.assertLess(_norm_without_intercept(beta_large), _norm_without_intercept(beta_small))
 
-def test_plot_ridge_trace():
-    # Test case 1: returns correct number of traces and points
-    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
-    y = [[3.0], [5.0], [7.0]]
-    traces = plot_ridge_trace(X, y, lambdas=[0.1, 1.0], show=False)
-    assert len(traces) == 2
-    assert len(traces[0]) == 2
+    def test_plot_ridge_trace(self):
+        # Test case 1: returns correct number of traces and points
+        X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+        y = [[3.0], [5.0], [7.0]]
+        traces = plot_ridge_trace(X, y, lambdas=[0.1, 1.0], show=False)
+        self.assertEqual(len(traces), 2)
+        self.assertEqual(len(traces[0]), 2)
 
-    # Test case 2: check if ValueError raised with invalid max_features
-    try:
-        plot_ridge_trace(X, y, lambdas=[0.1], show=False, max_features=-1)
-        assert False, "Should raise ValueError due to negative max_features"
-    except ValueError:
-        pass
+        # Test case 2: check if ValueError raised with invalid max_features
+        with self.assertRaises(ValueError):
+            plot_ridge_trace(X, y, lambdas=[0.1], show=False, max_features=-1)
 
-def test_ridge_trace():
-    # Test case 1: calling ridge_trace performs plot_ridge_trace and returns results
-    X = [[1.0, 1.0], [1.0, 2.0]]
-    y = [[3.0], [5.0]]
-    traces = ridge_trace(X, y, lam=[0.1, 1.0])
-    assert len(traces) == 2
+    def test_ridge_trace(self):
+        # Test case 1: calling ridge_trace performs plot_ridge_trace and returns results
+        X = [[1.0, 1.0], [1.0, 2.0]]
+        y = [[3.0], [5.0]]
+        traces = ridge_trace(X, y, lam=[0.1, 1.0])
+        self.assertEqual(len(traces), 2)
 
-    # Test case 2: handles custom lambdas correctly
-    assert len(traces[0]) == len(X[0])
+        # Test case 2: handles custom lambdas correctly
+        self.assertEqual(len(traces[0]), len(X[0]))
 
-def test__soft_threshold():
-    # Test case 1: soft threshold of zero/insufficient value returns 0.0
-    assert _soft_threshold(0.5, 1.0) == 0.0
-    assert _soft_threshold(-0.5, 1.0) == 0.0
+    def test__soft_threshold(self):
+        # Test case 1: soft threshold of zero/insufficient value returns 0.0
+        self.assertEqual(_soft_threshold(0.5, 1.0), 0.0)
+        self.assertEqual(_soft_threshold(-0.5, 1.0), 0.0)
 
-    # Test case 2: soft threshold of large positive/negative values shrinks them
-    assert _soft_threshold(2.5, 1.0) == 1.5
-    assert _soft_threshold(-2.5, 1.0) == -1.5
+        # Test case 2: soft threshold of large positive/negative values shrinks them
+        self.assertEqual(_soft_threshold(2.5, 1.0), 1.5)
+        self.assertEqual(_soft_threshold(-2.5, 1.0), -1.5)
 
-def test_lasso_fit():
-    # Test case 1: lasso fit with small lambda is close to OLS fit
-    try:
-        from part1.ols_implementation import ols_fit
-    except ModuleNotFoundError:
-        from ols_implementation import ols_fit
-    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
-    y = [[3.0], [5.0], [7.0]]
-    beta_lasso = lasso_fit(X, y, lam=1e-8)
-    beta_ols, _ = ols_fit(X, y)
-    assert _almost_equal_matrix(beta_lasso, beta_ols, tol=1e-3)
+    def test_lasso_fit(self):
+        # Test case 1: lasso fit with small lambda is close to OLS fit
+        try:
+            from part1.ols_implementation import ols_fit
+        except ModuleNotFoundError:
+            from ols_implementation import ols_fit
+        X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+        y = [[3.0], [5.0], [7.0]]
+        beta_lasso = lasso_fit(X, y, lam=1e-8)
+        beta_ols, _ = ols_fit(X, y)
+        self.assertTrue(_almost_equal_matrix(beta_lasso, beta_ols, tol=1e-3))
 
-    # Test case 2: lasso fit with high lambda introduces sparsity (coefficient is exactly 0)
-    X_sparsity = [[1.0, 1.0, 0.5], [1.0, 2.0, 1.0], [1.0, 3.0, 1.5]]
-    y_sparsity = [[3.0], [5.0], [7.0]]
-    beta_lasso_sparse = lasso_fit(X_sparsity, y_sparsity, lam=10.0)
-    non_intercept_betas = [beta_lasso_sparse[j][0] for j in range(1, len(beta_lasso_sparse))]
-    assert any(abs(b) < 1e-10 for b in non_intercept_betas)
+        # Test case 2: lasso fit with high lambda introduces sparsity (coefficient is exactly 0)
+        X_sparsity = [[1.0, 1.0, 0.5], [1.0, 2.0, 1.0], [1.0, 3.0, 1.5]]
+        y_sparsity = [[3.0], [5.0], [7.0]]
+        beta_lasso_sparse = lasso_fit(X_sparsity, y_sparsity, lam=10.0)
+        non_intercept_betas = [beta_lasso_sparse[j][0] for j in range(1, len(beta_lasso_sparse))]
+        self.assertTrue(any(abs(b) < 1e-10 for b in non_intercept_betas))
 
-def test_plot_lasso_path():
-    # Test case 1: returns correct number of traces and points
-    X = [[1.0, 1.0], [1.0, 2.0]]
-    y = [[3.0], [5.0]]
-    traces = plot_lasso_path(X, y, lambdas=[0.1, 1.0], show=False)
-    assert len(traces) == 2
-    assert len(traces[0]) == 2
+    def test_plot_lasso_path(self):
+        # Test case 1: returns correct number of traces and points
+        X = [[1.0, 1.0], [1.0, 2.0]]
+        y = [[3.0], [5.0]]
+        traces = plot_lasso_path(X, y, lambdas=[0.1, 1.0], show=False)
+        self.assertEqual(len(traces), 2)
+        self.assertEqual(len(traces[0]), 2)
 
-    # Test case 2: check if ValueError raised with invalid lambda <= 0
-    try:
-        plot_lasso_path(X, y, lambdas=[0.0], show=False)
-        assert False, "Should raise ValueError due to lambda <= 0"
-    except ValueError:
-        pass
+        # Test case 2: check if ValueError raised with invalid lambda <= 0
+        with self.assertRaises(ValueError):
+            plot_lasso_path(X, y, lambdas=[0.0], show=False)
 
-def test__almost_equal_matrix():
-    # Test case 1: returns True for close matrices
-    A = [[1.0, 2.0], [3.0, 4.0]]
-    B = [[1.0000001, 2.0], [3.0, 3.9999999]]
-    assert _almost_equal_matrix(A, B, tol=1e-5) is True
+    def test__almost_equal_matrix(self):
+        # Test case 1: returns True for close matrices
+        A = [[1.0, 2.0], [3.0, 4.0]]
+        B = [[1.0000001, 2.0], [3.0, 3.9999999]]
+        self.assertTrue(_almost_equal_matrix(A, B, tol=1e-5))
 
-    # Test case 2: returns False for different shapes or values
-    assert _almost_equal_matrix(A, [[1.0]], tol=1e-5) is False
-    assert _almost_equal_matrix(A, B, tol=1e-9) is False
+        # Test case 2: returns False for different shapes or values
+        self.assertFalse(_almost_equal_matrix(A, [[1.0]], tol=1e-5))
+        self.assertFalse(_almost_equal_matrix(A, B, tol=1e-9))
 
-def test__norm_without_intercept():
-    # Test case 1: ignores first element (intercept)
-    beta = [[10.0], [3.0], [4.0]]
-    assert abs(_norm_without_intercept(beta) - 5.0) < 1e-9
+    def test__norm_without_intercept(self):
+        # Test case 1: ignores first element (intercept)
+        beta = [[10.0], [3.0], [4.0]]
+        self.assertAlmostEqual(_norm_without_intercept(beta), 5.0, places=9)
 
-    # Test case 2: returns 0.0 if only intercept is present
-    assert _norm_without_intercept([[10.0]]) == 0.0
-
-def main():
-    test_ridge_fit()
-    test_plot_ridge_trace()
-    test_ridge_trace()
-    test__soft_threshold()
-    test_lasso_fit()
-    test_plot_lasso_path()
-    test__almost_equal_matrix()
-    test__norm_without_intercept()
-    print("All tests passed in ridge_lasso.py!")
+        # Test case 2: returns 0.0 if only intercept is present
+        self.assertEqual(_norm_without_intercept([[10.0]]), 0.0)
 
 if __name__ == "__main__":
-    main()
+    unittest.main()
 
