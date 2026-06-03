@@ -8,6 +8,7 @@ Sklearn chi duoc dung de chia train/test reproducible.
 import math
 import sys
 from pathlib import Path
+import unittest
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -41,7 +42,7 @@ def default_lambdas():
 
 
 def df_to_2d_list(data):
-    """Chuyen pandas DataFrame/Series hoac list 1D thanh 2D list."""
+    """Chuyen pandas DataFrame/Series hoac list 1-D thanh 2-D list."""
     if isinstance(data, pd.Series):
         return [[float(value)] for value in data.tolist()]
 
@@ -561,203 +562,188 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     }
 
 
-def test_default_lambdas():
-    # Test case 1: returns correct number of lambdas
-    lams = default_lambdas()
-    assert len(lams) == 25
+class TestModelComparison(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import matplotlib
+        matplotlib.use("Agg")
 
-    # Test case 2: check if boundary values are correct
-    assert lams[0] == 1e-4
-    assert abs(lams[-1] - 1e4) < 1e-9
+    def test_default_lambdas(self):
+        # Test case 1: returns correct number of lambdas
+        lams = default_lambdas()
+        self.assertEqual(len(lams), 25)
 
-def test_df_to_2d_list():
-    # Test case 1: converts pandas DataFrame correctly
-    df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
-    assert df_to_2d_list(df) == [[1.0, 3.0], [2.0, 4.0]]
+        # Test case 2: check if boundary values are correct
+        self.assertEqual(lams[0], 1e-4)
+        self.assertAlmostEqual(lams[-1], 1e4, places=9)
 
-    # Test case 2: converts pandas Series correctly
-    ser = pd.Series([5, 6])
-    assert df_to_2d_list(ser) == [[5.0], [6.0]]
+    def test_df_to_2d_list(self):
+        # Test case 1: converts pandas DataFrame correctly
+        df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+        self.assertEqual(df_to_2d_list(df), [[1.0, 3.0], [2.0, 4.0]])
 
-def test_add_intercept():
-    # Test case 1: adds column of ones at index 0
-    X = [[1.0], [2.0]]
-    assert add_intercept(X) == [[1.0, 1.0], [1.0, 2.0]]
+        # Test case 2: converts pandas Series correctly
+        ser = pd.Series([5, 6])
+        self.assertEqual(df_to_2d_list(ser), [[5.0], [6.0]])
 
-    # Test case 2: handles empty list
-    assert add_intercept([]) == []
+    def test_add_intercept(self):
+        # Test case 1: adds column of ones at index 0
+        X = [[1.0], [2.0]]
+        self.assertEqual(add_intercept(X), [[1.0, 1.0], [1.0, 2.0]])
 
-def test_predict():
-    # Test case 1: matrix multiplies X and beta
-    X = [[1.0, 2.0], [1.0, 3.0]]
-    beta = [[1.0], [2.0]]
-    assert predict(X, beta) == [[5.0], [7.0]]
+        # Test case 2: handles empty list
+        self.assertEqual(add_intercept([]), [])
 
-    # Test case 2: check dimensions of output
-    y_pred = predict(X, beta)
-    assert len(y_pred) == 2
-    assert len(y_pred[0]) == 1
+    def test_predict(self):
+        # Test case 1: matrix multiplies X and beta
+        X = [[1.0, 2.0], [1.0, 3.0]]
+        beta = [[1.0], [2.0]]
+        self.assertEqual(predict(X, beta), [[5.0], [7.0]])
 
-def test_compute_metrics():
-    # Test case 1: calculates MAE and RMSE correctly for perfect fit
-    y_true = [[2.0], [4.0]]
-    y_pred = [[2.0], [4.0]]
-    met = compute_metrics(y_true, y_pred)
-    assert abs(met['MAE'] - 0.0) < 1e-9
-    assert abs(met['RMSE'] - 0.0) < 1e-9
+        # Test case 2: check dimensions of output
+        y_pred = predict(X, beta)
+        self.assertEqual(len(y_pred), 2)
+        self.assertEqual(len(y_pred[0]), 1)
 
-    # Test case 2: raises ValueError on mismatched shape
-    try:
-        compute_metrics([[1.0]], [[1.0], [2.0]])
-        assert False, "Should raise ValueError due to mismatched rows"
-    except ValueError:
-        pass
+    def test_compute_metrics(self):
+        # Test case 1: calculates MAE and RMSE correctly for perfect fit
+        y_true = [[2.0], [4.0]]
+        y_pred = [[2.0], [4.0]]
+        met = compute_metrics(y_true, y_pred)
+        self.assertAlmostEqual(met['MAE'], 0.0, places=9)
+        self.assertAlmostEqual(met['RMSE'], 0.0, places=9)
 
-def test_vif_values():
-    # Test case 1: low VIF when no multicollinearity
-    X = [
-        [1.0, -2.0, 4.0],
-        [1.0, -1.0, 1.0],
-        [1.0, 0.0, 0.0],
-        [1.0, 1.0, 1.0],
-        [1.0, 2.0, 4.0],
-        [1.0, 3.0, 9.0],
-    ]
-    vifs = vif_values(X, ["intercept", "x1", "x2"])
-    assert all(item["VIF"] < 2.0 for item in vifs)
+        # Test case 2: raises ValueError on mismatched shape
+        with self.assertRaises(ValueError):
+            compute_metrics([[1.0]], [[1.0], [2.0]])
 
-    # Test case 2: high VIF when there is multicollinearity
-    X_mc = []
-    for i in range(1, 15):
-        x1 = float(i)
-        noise = 0.01 if i % 2 == 0 else -0.01
-        x2 = x1 + noise
-        X_mc.append([1.0, x1, x2])
-    vifs_mc = vif_values(X_mc, ["intercept", "x1", "x2"])
-    assert any(item["VIF"] > 10.0 for item in vifs_mc)
+    def test_vif_values(self):
+        # Test case 1: low VIF when no multicollinearity
+        X = [
+            [1.0, -2.0, 4.0],
+            [1.0, -1.0, 1.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [1.0, 2.0, 4.0],
+            [1.0, 3.0, 9.0],
+        ]
+        vifs = vif_values(X, ["intercept", "x1", "x2"])
+        self.assertTrue(all(item["VIF"] < 2.0 for item in vifs))
 
-def test_ols_variable_selection():
-    # Test case 1: removes redundant collinear features
-    X = []
-    y = []
-    for i in range(1, 18):
-        x1 = float(i)
-        noise = 0.01 if i % 2 == 0 else -0.01
-        x2 = x1 + noise
-        X.append([1.0, x1, x2])
-        y.append([1.0 + 2.0 * x1 + 0.05 * noise])
-    result = ols_variable_selection(X, y, ["intercept", "x1", "x2"], p_threshold=1.0, vif_threshold=10.0)
-    assert len(result["removed_features"]) >= 1
+        # Test case 2: high VIF when there is multicollinearity
+        X_mc = []
+        for i in range(1, 15):
+            x1 = float(i)
+            noise = 0.01 if i % 2 == 0 else -0.01
+            x2 = x1 + noise
+            X_mc.append([1.0, x1, x2])
+        vifs_mc = vif_values(X_mc, ["intercept", "x1", "x2"])
+        self.assertTrue(any(item["VIF"] > 10.0 for item in vifs_mc))
 
-    # Test case 2: keeps significant non-collinear features
-    X_sig = []
-    y_sig = []
-    for i in range(1, 18):
-        x1 = float(i)
-        x2 = 1.0 if i % 2 == 0 else -1.0
-        noise = 0.05 if i % 3 == 0 else -0.03
-        X_sig.append([1.0, x1, x2])
-        y_sig.append([1.0 + 2.0 * x1 + noise])
-    result_sig = ols_variable_selection(X_sig, y_sig, ["intercept", "x1", "x2"], p_threshold=0.05, vif_threshold=10.0)
-    assert "x1" in result_sig["selected_features"]
+    def test_ols_variable_selection(self):
+        # Test case 1: removes redundant collinear features
+        X = []
+        y = []
+        for i in range(1, 18):
+            x1 = float(i)
+            noise = 0.01 if i % 2 == 0 else -0.01
+            x2 = x1 + noise
+            X.append([1.0, x1, x2])
+            y.append([1.0 + 2.0 * x1 + 0.05 * noise])
+        result = ols_variable_selection(X, y, ["intercept", "x1", "x2"], p_threshold=1.0, vif_threshold=10.0)
+        self.assertGreaterEqual(len(result["removed_features"]), 1)
 
-def test_select_best_lambda():
-    # Test case 1: selects best lambda from custom grid
-    X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
-    y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
-    best_lam, cv_res = select_best_lambda(X_cv, y_cv, k=3, lambdas=[0.1, 1.0, 10.0])
-    assert best_lam in [0.1, 1.0, 10.0]
+        # Test case 2: keeps significant non-collinear features
+        X_sig = []
+        y_sig = []
+        for i in range(1, 18):
+            x1 = float(i)
+            x2 = 1.0 if i % 2 == 0 else -1.0
+            noise = 0.05 if i % 3 == 0 else -0.03
+            X_sig.append([1.0, x1, x2])
+            y_sig.append([1.0 + 2.0 * x1 + noise])
+        result_sig = ols_variable_selection(X_sig, y_sig, ["intercept", "x1", "x2"], p_threshold=0.05, vif_threshold=10.0)
+        self.assertIn("x1", result_sig["selected_features"])
 
-    # Test case 2: cv results table has correct columns
-    assert "cv_mse" in cv_res.columns
-    assert "lambda" in cv_res.columns
+    def test_select_best_lambda(self):
+        # Test case 1: selects best lambda from custom grid
+        X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
+        y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
+        best_lam, cv_res = select_best_lambda(X_cv, y_cv, k=3, lambdas=[0.1, 1.0, 10.0])
+        self.assertIn(best_lam, [0.1, 1.0, 10.0])
 
-def test_select_best_lambda_lasso():
-    # Test case 1: selects best lambda from custom grid
-    X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
-    y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
-    best_lam, cv_res = select_best_lambda_lasso(X_cv, y_cv, k=3, lambdas=[0.001, 0.01, 0.1])
-    assert best_lam in [0.001, 0.01, 0.1]
+        # Test case 2: cv results table has correct columns
+        self.assertIn("cv_mse", cv_res.columns)
+        self.assertIn("lambda", cv_res.columns)
 
-    # Test case 2: cv results table has correct columns
-    assert "cv_mse" in cv_res.columns
-    assert "lambda" in cv_res.columns
+    def test_select_best_lambda_lasso(self):
+        # Test case 1: selects best lambda from custom grid
+        X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
+        y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
+        best_lam, cv_res = select_best_lambda_lasso(X_cv, y_cv, k=3, lambdas=[0.001, 0.01, 0.1])
+        self.assertIn(best_lam, [0.001, 0.01, 0.1])
 
-def test_plot_cv_results():
-    # Test case 1: runs without exception when show=False
-    cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
-    plot_cv_results(cv_res, show=False)
-    plt.close('all')
+        # Test case 2: cv results table has correct columns
+        self.assertIn("cv_mse", cv_res.columns)
+        self.assertIn("lambda", cv_res.columns)
 
-    # Test case 2: verify grid exists or can plot
-    assert "cv_mse" in cv_res.columns
+    def test_plot_cv_results(self):
+        # Test case 1: runs without exception when show=False
+        cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
+        plot_cv_results(cv_res, show=False)
+        plt.close('all')
 
-def test_plot_cv_results_lasso():
-    # Test case 1: runs without exception when show=False
-    cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
-    plot_cv_results_lasso(cv_res, show=False)
-    plt.close('all')
+        # Test case 2: verify grid exists or can plot
+        self.assertIn("cv_mse", cv_res.columns)
 
-    # Test case 2: verify grid exists or can plot
-    assert "cv_mse" in cv_res.columns
+    def test_plot_cv_results_lasso(self):
+        # Test case 1: runs without exception when show=False
+        cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
+        plot_cv_results_lasso(cv_res, show=False)
+        plt.close('all')
 
-def test_ridge_coefficients_table():
-    # Test case 1: sorts by absolute value of coefficient descending
-    beta = [[1.5], [-2.5]]
-    tbl = ridge_coefficients_table(beta, ['intercept', 'feat1'])
-    assert tbl.iloc[0]['Feature'] == 'feat1'
-    assert tbl.iloc[1]['Feature'] == 'intercept'
+        # Test case 2: verify grid exists or can plot
+        self.assertIn("cv_mse", cv_res.columns)
 
-    # Test case 2: output contains Feature and Coefficient columns
-    assert "Feature" in tbl.columns
-    assert "Coefficient" in tbl.columns
+    def test_ridge_coefficients_table(self):
+        # Test case 1: sorts by absolute value of coefficient descending
+        beta = [[1.5], [-2.5]]
+        tbl = ridge_coefficients_table(beta, ['intercept', 'feat1'])
+        self.assertEqual(tbl.iloc[0]['Feature'], 'feat1')
+        self.assertEqual(tbl.iloc[1]['Feature'], 'intercept')
 
-def test_ridge_trace_table():
-    # Test case 1: returns correct number of rows and columns
-    X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
-    y_cv = [[3.0], [5.0], [7.0]]
-    tbl = ridge_trace_table(X_cv, y_cv, lambdas=[0.1, 1.0], feature_names=['intercept', 'x1'], decimals=2)
-    assert len(tbl) == 2
+        # Test case 2: output contains Feature and Coefficient columns
+        self.assertIn("Feature", tbl.columns)
+        self.assertIn("Coefficient", tbl.columns)
 
-    # Test case 2: table contains feature names as columns
-    assert 'x1' in tbl.columns
+    def test_ridge_trace_table(self):
+        # Test case 1: returns correct number of rows and columns
+        X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+        y_cv = [[3.0], [5.0], [7.0]]
+        tbl = ridge_trace_table(X_cv, y_cv, lambdas=[0.1, 1.0], feature_names=['intercept', 'x1'], decimals=2)
+        self.assertEqual(len(tbl), 2)
 
-def test_prepare_air_quality_data():
-    # Test case 1: loads and prepares data successfully
-    data = prepare_air_quality_data(DATA_PATH)
-    assert "X_train" in data
-    assert "y_train" in data
-    assert len(data["X_train"][0]) == 15
+        # Test case 2: table contains feature names as columns
+        self.assertIn('x1', tbl.columns)
 
-    # Test case 2: returns correct features shape
-    assert len(data["X_test"][0]) == 15
+    def test_prepare_air_quality_data(self):
+        # Test case 1: loads and prepares data successfully
+        data = prepare_air_quality_data(DATA_PATH)
+        self.assertIn("X_train", data)
+        self.assertIn("y_train", data)
+        self.assertEqual(len(data["X_train"][0]), 15)
 
-def test_train_and_compare():
-    # Test case 1: trains all 5 models and returns metrics table
-    res = train_and_compare(DATA_PATH, k=2, lambdas=[0.1, 1.0], plot=False)
-    assert "metrics_table" in res
-    assert len(res["metrics_table"]) == 5
+        # Test case 2: returns correct features shape
+        self.assertEqual(len(data["X_test"][0]), 15)
 
-    # Test case 2: best lambda results are populated
-    assert res["best_lambda_ridge"] in [0.1, 1.0]
+    def test_train_and_compare(self):
+        # Test case 1: trains all 5 models and returns metrics table
+        res = train_and_compare(DATA_PATH, k=2, lambdas=[0.1, 1.0], plot=False)
+        self.assertIn("metrics_table", res)
+        self.assertEqual(len(res["metrics_table"]), 5)
 
-def main():
-    test_default_lambdas()
-    test_df_to_2d_list()
-    test_add_intercept()
-    test_predict()
-    test_compute_metrics()
-    test_vif_values()
-    test_ols_variable_selection()
-    test_select_best_lambda()
-    test_select_best_lambda_lasso()
-    test_plot_cv_results()
-    test_plot_cv_results_lasso()
-    test_ridge_coefficients_table()
-    test_ridge_trace_table()
-    test_prepare_air_quality_data()
-    test_train_and_compare()
-    print("All tests passed in model_comparison.py!")
+        # Test case 2: best lambda results are populated
+        self.assertIn(res["best_lambda_ridge"], [0.1, 1.0])
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

@@ -2,6 +2,7 @@ import warnings
 warnings.filterwarnings('ignore', message=".*dtypes are included by select_dtypes")
 warnings.filterwarnings('ignore', message=".*Downcasting object dtype arrays")
 import pandas as pd
+import unittest
 
 class DataPipeline:
     """
@@ -153,113 +154,104 @@ class DataPipeline:
         """Hàm tiện ích kết hợp fit và transform"""
         return self.fit(X).transform(X)
 
-# Test section
+class TestDataPipeline(unittest.TestCase):
+    def test___init__(self):
+        # Test case 1: default init values
+        p = DataPipeline()
+        self.assertEqual(p.missing_threshold, 0.5)
+        self.assertEqual(p.numeric_strategy, 'median')
 
-def test___init__():
-    # Test case 1: default init values
-    p = DataPipeline()
-    assert p.missing_threshold == 0.5
-    assert p.numeric_strategy == 'median'
+        # Test case 2: custom init values
+        p2 = DataPipeline(missing_threshold=0.3, numeric_strategy='mean')
+        self.assertEqual(p2.missing_threshold, 0.3)
+        self.assertEqual(p2.numeric_strategy, 'mean')
 
-    # Test case 2: custom init values
-    p2 = DataPipeline(missing_threshold=0.3, numeric_strategy='mean')
-    assert p2.missing_threshold == 0.3
-    assert p2.numeric_strategy == 'mean'
+    def test__extract_temporal_features(self):
+        p = DataPipeline()
+        # Test case 1: correctly extracts Month, DayOfWeek, Hour from Date/Time columns
+        df_in = pd.DataFrame({
+            'Date': ['03/15/2004', '04/20/2005'],
+            'Time': ['18:00:00', '09:30:00']
+        })
+        df_out = p._extract_temporal_features(df_in)
+        self.assertIn('Month', df_out.columns)
+        self.assertIn('DayOfWeek', df_out.columns)
+        self.assertIn('Hour', df_out.columns)
+        self.assertEqual(list(df_out['Month']), [3, 4])
+        self.assertEqual(list(df_out['Hour']), [18, 9])
 
-def test__extract_temporal_features():
-    p = DataPipeline()
-    # Test case 1: correctly extracts Month, DayOfWeek, Hour from Date/Time columns
-    df_in = pd.DataFrame({
-        'Date': ['03/15/2004', '04/20/2005'],
-        'Time': ['18:00:00', '09:30:00']
-    })
-    df_out = p._extract_temporal_features(df_in)
-    assert 'Month' in df_out.columns
-    assert 'DayOfWeek' in df_out.columns
-    assert 'Hour' in df_out.columns
-    assert list(df_out['Month']) == [3, 4]
-    assert list(df_out['Hour']) == [18, 9]
+        # Test case 2: does not crash when columns are missing
+        df_in2 = pd.DataFrame({'Val': [1, 2]})
+        df_out2 = p._extract_temporal_features(df_in2)
+        self.assertIn('Val', df_out2.columns)
+        self.assertEqual(len(df_out2.columns), 1)
 
-    # Test case 2: does not crash when columns are missing
-    df_in2 = pd.DataFrame({'Val': [1, 2]})
-    df_out2 = p._extract_temporal_features(df_in2)
-    assert 'Val' in df_out2.columns
-    assert len(df_out2.columns) == 1
+    def test_fit(self):
+        # Test case 1: identifies cols to drop based on missing threshold
+        import numpy as np
+        df_in = pd.DataFrame({
+            'A': [1.0, 2.0, 3.0, 4.0],
+            'B': [1.0, np.nan, np.nan, np.nan] # 75% missing
+        })
+        p = DataPipeline(missing_threshold=0.5)
+        p.fit(df_in)
+        self.assertIn('B', p.cols_to_drop)
 
-def test_fit():
-    # Test case 1: identifies cols to drop based on missing threshold
-    import numpy as np
-    df_in = pd.DataFrame({
-        'A': [1.0, 2.0, 3.0, 4.0],
-        'B': [1.0, np.nan, np.nan, np.nan] # 75% missing
-    })
-    p = DataPipeline(missing_threshold=0.5)
-    p.fit(df_in)
-    assert 'B' in p.cols_to_drop
+        # Test case 2: calculates outlier bounds, impute values, means, stds
+        df_in2 = pd.DataFrame({
+            'A': [1.0, 2.0, 3.0, 100.0],
+            'B': [10.0, 20.0, np.nan, 40.0]
+        })
+        p2 = DataPipeline(numeric_strategy='median')
+        p2.fit(df_in2)
+        self.assertIn('A', p2.outlier_bounds)
+        self.assertEqual(p2.impute_values['B'], 20.0)
 
-    # Test case 2: calculates outlier bounds, impute values, means, stds
-    df_in2 = pd.DataFrame({
-        'A': [1.0, 2.0, 3.0, 100.0],
-        'B': [10.0, 20.0, np.nan, 40.0]
-    })
-    p2 = DataPipeline(numeric_strategy='median')
-    p2.fit(df_in2)
-    assert 'A' in p2.outlier_bounds
-    assert p2.impute_values['B'] == 20.0
+    def test_transform(self):
+        # Test case 1: imputes missing values and winsorizes outliers
+        import numpy as np
+        df_train = pd.DataFrame({'A': [1.0, 2.0, 3.0, 4.0, 5.0]}) # bounds [-1, 7]
+        p = DataPipeline()
+        p.fit(df_train)
+        df_test = pd.DataFrame({'A': [pd.NA, 10.0, -5.0]})
+        df_test_out = p.transform(df_test)
+        mean_val = p.means['A']
+        std_val = p.stds['A']
+        orig_vals = df_test_out['A'] * std_val + mean_val
+        self.assertAlmostEqual(orig_vals[0], 3.0, places=9)  # imputed median = 3
+        self.assertAlmostEqual(orig_vals[1], 7.0, places=9)  # winsorized 10 -> 7
+        self.assertAlmostEqual(orig_vals[2], -1.0, places=9)  # winsorized -5 -> -1
 
-def test_transform():
-    # Test case 1: imputes missing values and winsorizes outliers
-    import numpy as np
-    df_train = pd.DataFrame({'A': [1.0, 2.0, 3.0, 4.0, 5.0]}) # bounds [-1, 7]
-    p = DataPipeline()
-    p.fit(df_train)
-    df_test = pd.DataFrame({'A': [pd.NA, 10.0, -5.0]})
-    df_test_out = p.transform(df_test)
-    mean_val = p.means['A']
-    std_val = p.stds['A']
-    orig_vals = df_test_out['A'] * std_val + mean_val
-    assert abs(orig_vals[0] - 3.0) < 1e-9  # imputed median = 3
-    assert abs(orig_vals[1] - 7.0) < 1e-9  # winsorized 10 -> 7
-    assert abs(orig_vals[2] - (-1.0)) < 1e-9  # winsorized -5 -> -1
+        # Test case 2: reindexes encoding columns correctly
+        df_train_cat = pd.DataFrame({'Cat': ['X', 'Y', 'X']})
+        p2 = DataPipeline()
+        p2.fit(df_train_cat)
+        df_test_cat = pd.DataFrame({'Cat': ['X', 'Z']})
+        df_test_out2 = p2.transform(df_test_cat)
+        self.assertIn('Cat_X', df_test_out2.columns)
+        self.assertIn('Cat_Y', df_test_out2.columns)
+        self.assertNotIn('Cat_Z', df_test_out2.columns)
 
-    # Test case 2: reindexes encoding columns correctly
-    df_train_cat = pd.DataFrame({'Cat': ['X', 'Y', 'X']})
-    p2 = DataPipeline()
-    p2.fit(df_train_cat)
-    df_test_cat = pd.DataFrame({'Cat': ['X', 'Z']})
-    df_test_out2 = p2.transform(df_test_cat)
-    assert 'Cat_X' in df_test_out2.columns
-    assert 'Cat_Y' in df_test_out2.columns
-    assert 'Cat_Z' not in df_test_out2.columns
+    def test_fit_transform(self):
+        # Test case 1: fit_transform returns same output as calling fit then transform
+        import numpy as np
+        df = pd.DataFrame({'A': [1.0, 2.0, 3.0]})
+        p1 = DataPipeline()
+        out1 = p1.fit_transform(df)
+        p2 = DataPipeline()
+        p2.fit(df)
+        out2 = p2.transform(df)
+        self.assertTrue(np.allclose(out1.values, out2.values))
 
-def test_fit_transform():
-    # Test case 1: fit_transform returns same output as calling fit then transform
-    import numpy as np
-    df = pd.DataFrame({'A': [1.0, 2.0, 3.0]})
-    p1 = DataPipeline()
-    out1 = p1.fit_transform(df)
-    p2 = DataPipeline()
-    p2.fit(df)
-    out2 = p2.transform(df)
-    assert np.allclose(out1.values, out2.values)
-
-    # Test case 2: works correctly on a mini dummy dataset with date/time
-    df_small = pd.DataFrame({
-        'Date': ['01/01/2000', '01/02/2000'],
-        'Time': ['12:00:00', '13:00:00'],
-        'Val': [1.5, 2.5]
-    })
-    p3 = DataPipeline()
-    out_small = p3.fit_transform(df_small)
-    assert out_small.shape == (2, 4)
-
-def main():
-    test___init__()
-    test__extract_temporal_features()
-    test_fit()
-    test_transform()
-    test_fit_transform()
-    print("All tests passed in data_pipeline.py!")
+        # Test case 2: works correctly on a mini dummy dataset with date/time
+        df_small = pd.DataFrame({
+            'Date': ['01/01/2000', '01/02/2000'],
+            'Time': ['12:00:00', '13:00:00'],
+            'Val': [1.5, 2.5]
+        })
+        p3 = DataPipeline()
+        out_small = p3.fit_transform(df_small)
+        self.assertEqual(out_small.shape, (2, 4))
 
 if __name__ == "__main__":
-    main()
+    unittest.main()
