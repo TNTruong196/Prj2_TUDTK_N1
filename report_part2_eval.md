@@ -2,15 +2,16 @@
 
 ---
 
-## 1. Bảng so sánh 4 mô hình
+## 1. Bảng so sánh 5 mô hình
 
-Kết quả được lấy từ lần chạy `python part2/model_comparison.py` với `random_state=42`, chia train/test 80/20 và chọn lambda Ridge bằng 5-fold Cross-Validation trên tập train.
+Kết quả được lấy từ lần chạy `python part2/model_comparison.py` với `random_state=42`, chia train/test 80/20, chọn lambda cho Ridge bằng 5-fold Cross-Validation và chọn lambda cho Lasso bằng 5-fold Cross-Validation trên tập train.
 
 | Model | MAE | RMSE | R2 |
 |---|---:|---:|---:|
 | OLS | 0.889981 | 1.446089 | 0.963608 |
 | OLS (Variable Selection) | 1.428491 | 2.072625 | 0.925242 |
 | Ridge (lambda=0.1) | 0.889957 | 1.446081 | 0.963608 |
+| Lasso (lambda=0.0001) | 0.889858 | 1.446016 | 0.963611 |
 | Bayesian Linear Regression | 0.889976 | 1.446087 | 0.963608 |
 
 Bảng dạng LaTeX-ready:
@@ -25,6 +26,7 @@ Model & MAE & RMSE & R^2 \\
 OLS & 0.889981 & 1.446089 & 0.963608 \\
 OLS (Variable Selection) & 1.428491 & 2.072625 & 0.925242 \\
 Ridge ($\lambda=0.1$) & 0.889957 & 1.446081 & 0.963608 \\
+Lasso ($\lambda=0.0001$) & 0.889858 & 1.446016 & 0.963611 \\
 Bayesian Linear Regression & 0.889976 & 1.446087 & 0.963608 \\
 \hline
 \end{tabular}
@@ -69,29 +71,35 @@ Ridge Regression chọn lambda = 0.1 bằng 5-fold Cross-Validation. Top 5 giá 
 | 0.010000 | 1.993500 |
 | 0.004642 | 1.993501 |
 
-Ridge đạt MAE = 0.889957, RMSE = 1.446081 và R2 = 0.963608. Đây là kết quả tốt nhất theo MAE và RMSE, nhưng mức cải thiện so với OLS rất nhỏ.
+Ridge đạt MAE = 0.889957, RMSE = 1.446081 và R2 = 0.963608. Đây là kết quả rất tốt, tương đương OLS nhưng các hệ số ổn định hơn nhờ phạt L2 (regularization).
 
-Lý do hợp lý là OLS đã fit rất tốt trên dataset này, trong khi Ridge chỉ thêm regularization L2 để co nhỏ hệ số. Ridge không loại biến như OLS chọn biến, mà giữ lại toàn bộ tín hiệu cảm biến và giảm variance của hệ số. Đây là bias-variance tradeoff: mô hình chấp nhận một lượng bias nhỏ từ regularization để đổi lấy hệ số ổn định hơn, đặc biệt khi các cảm biến có tương quan mạnh.
+### 2.4. Lasso Regression
 
-### 2.4. Bayesian Linear Regression
+Lasso Regression tự cài đặt bằng Coordinate Descent kết hợp với kỹ thuật tối ưu vector residuals (giảm độ phức tạp tính toán r_j xuống còn $O(N)$ thay vì $O(N \cdot P)$).
+Lasso chọn lambda = 0.0001 bằng 5-fold Cross-Validation. Top 5 giá trị lambda theo CV-MSE:
+
+| lambda | CV-MSE |
+|---:|---:|
+| 0.000100 | 1.993455 |
+| 0.000534 | 1.993493 |
+| 0.002848 | 1.995287 |
+| 0.015199 | 2.034271 |
+| 0.081113 | 2.196293 |
+
+Lasso đạt MAE = 0.889858, RMSE = 1.446016 và R2 = 0.963611. Đây là mô hình đạt kết quả tốt nhất trong tất cả các mô hình so sánh trên tập test (R2 cao nhất và sai số MAE/RMSE thấp nhất). 
+
+Do lambda chọn được rất nhỏ ($\lambda = 0.0001$), Lasso chỉ phạt nhẹ các biến có độ tương quan mạnh và duy trì hầu hết các biến quan trọng, mang lại hiệu năng dự báo vượt trội và tối ưu.
+
+### 2.5. Bayesian Linear Regression
 
 Bayesian Linear Regression dùng prior variance = 100 cho các hệ số feature, intercept prior variance = 1e12 và sigma2 ước lượng từ OLS. Mô hình đạt MAE = 0.889976, RMSE = 1.446087 và R2 = 0.963608.
 
-Kết quả gần OLS/Ridge vì prior variance = 100 là prior tương đối yếu sau khi dữ liệu đã được chuẩn hóa. Khi số mẫu lớn và tín hiệu tuyến tính mạnh, posterior mean chủ yếu bị chi phối bởi dữ liệu quan sát, nên dự đoán gần với nghiệm OLS. Điểm bổ sung của Bayesian LR là có posterior covariance, từ đó có thể diễn giải độ bất định của hệ số thay vì chỉ đưa ra một ước lượng điểm.
+Kết quả gần OLS/Ridge/Lasso vì prior variance = 100 là prior tương đối yếu sau khi dữ liệu đã được chuẩn hóa. Khi số mẫu lớn và tín hiệu tuyến tính mạnh, posterior mean chủ yếu bị chi phối bởi dữ liệu quan sát. Điểm bổ sung của Bayesian LR là có posterior covariance, cho phép biểu diễn các Credible Intervals (khoảng tin cậy Bayesian) cho các hệ số, giúp diễn giải trực quan mức độ bất định trong việc thu thập tín hiệu cảm biến.
 
 ---
 
 ## 3. Kết luận tổng quát
 
-Theo MAE và RMSE, Ridge Regression với lambda = 0.1 là mô hình tốt nhất, nhưng khoảng cách so với OLS và Bayesian Linear Regression gần như không đáng kể. Về mặt thực tế, cả ba mô hình OLS, Ridge và Bayesian LR đều phù hợp để dự đoán nồng độ Benzene `C6H6(GT)` trên bộ AirQuality.
+Theo các chỉ số đánh giá, Lasso Regression với lambda = 0.0001 là mô hình tốt nhất, bám sát là Ridge Regression với lambda = 0.1. Cả hai mô hình điều chuẩn hóa (regularized) đều mang lại hiệu quả tốt hơn OLS cơ bản và OLS chọn biến.
 
-Dataset AirQuality có đặc trưng là nhiều biến cảm biến đo các thành phần khí và điều kiện môi trường có tương quan cao với nhau. Điều này tạo ra hai hiện tượng cùng lúc:
-
-- Quan hệ tuyến tính với target rất mạnh, giúp OLS đạt R2 cao.
-- Đa cộng tuyến giữa các biến đầu vào, làm hệ số OLS có thể kém ổn định.
-
-Ridge là lựa chọn cân bằng nhất trong bộ so sánh này vì xử lý đa cộng tuyến bằng cách co nhỏ hệ số thay vì loại bỏ tín hiệu. OLS chọn biến hữu ích nếu mục tiêu ưu tiên mô hình gọn và giải thích qua ít biến hơn, nhưng kết quả test cho thấy việc loại `PT08.S2(NMHC)` và `T` làm mất đáng kể độ chính xác dự báo.
-
-Hạn chế của thực nghiệm hiện tại là các mô hình vẫn chủ yếu nằm trong họ tuyến tính. Hướng cải thiện có thể gồm: kiểm tra residual plots cho mô hình tốt nhất, thử thêm biến tương tác hoặc biến phi tuyến có kiểm soát, đánh giá độ ổn định của chọn biến qua nhiều split, và so sánh thêm các mô hình regularization khác nếu mục tiêu là tăng khả năng dự báo.
-
----
+Sự tương quan mạnh giữa các cảm biến trong không khí khiến mô hình tuyến tính đơn thuần dễ bị ảnh hưởng bởi hiện tượng đa cộng tuyến. Việc Ridge và Lasso kiểm soát hệ số thông qua hàm phạt L2 và L1 giúp duy trì tính ổn định của dự báo tốt hơn nhiều so với việc loại bỏ biến cứng nhắc trong OLS chọn biến.

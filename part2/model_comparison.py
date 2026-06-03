@@ -1,5 +1,5 @@
 """
-So sanh mo hinh OLS va Ridge tren du lieu Air Quality da tien xu ly.
+So sanh mo hinh OLS, Ridge, Lasso va Bayesian LR tren du lieu Air Quality da tien xu ly.
 
 Module nay dung cac ham tu cai dat o part1 cho phan fit/predict chinh.
 Sklearn chi duoc dung de chia train/test reproducible.
@@ -21,7 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from part1.cross_validation import kfold_cv
 from part1.matrix_helper import mat_mul
 from part1.ols_implementation import ols_fit, model_metrics, coef_inference
-from part1.ridge_lasso import plot_ridge_trace, ridge_fit
+from part1.ridge_lasso import plot_ridge_trace, ridge_fit, lasso_fit
 from part2.advanced_methods import bayesian_linear_fit, bayesian_predict
 
 try:
@@ -276,6 +276,43 @@ def select_best_lambda(X, y, k=5, lambdas=None):
     return float(best_row["lambda"]), cv_results
 
 
+def select_best_lambda_lasso(X, y, k=5, lambdas=None):
+    """
+    Chon lambda tot nhat cho Lasso bang k-fold CV.
+
+    Returns:
+        best_lambda: lambda co CV-MSE nho nhat
+        cv_results: DataFrame gom lambda, log10_lambda, cv_mse, fold_mses
+    """
+    if lambdas is None:
+        # Dung grid 12 point de chay nhanh hon
+        lambdas = [10 ** (-4 + 8 * i / 11) for i in range(12)]
+    if not lambdas:
+        raise ValueError("lambdas khong duoc rong")
+
+    records = []
+    for lam in lambdas:
+        if lam < 0:
+            raise ValueError("lambda phai >= 0")
+
+        fit_func = lambda X_train, y_train, current_lam=lam: lasso_fit(
+            X_train, y_train, current_lam, max_iter=100, tol=1e-4
+        )
+        cv_mse, fold_mses = kfold_cv(X, y, k, fit_func=fit_func)
+        records.append(
+            {
+                "lambda": lam,
+                "log10_lambda": math.log10(lam) if lam > 0 else None,
+                "cv_mse": cv_mse,
+                "fold_mses": fold_mses,
+            }
+        )
+
+    cv_results = pd.DataFrame(records)
+    best_row = cv_results.loc[cv_results["cv_mse"].idxmin()]
+    return float(best_row["lambda"]), cv_results
+
+
 def plot_cv_results(cv_results, show=True):
     """Ve CV-MSE theo log10(lambda)."""
     plt.figure(figsize=(8, 5))
@@ -286,6 +323,24 @@ def plot_cv_results(cv_results, show=True):
         linewidth=1.5,
     )
     plt.title("Ridge Lambda Selection by K-Fold CV")
+    plt.xlabel("log10(lambda)")
+    plt.ylabel("CV-MSE")
+    plt.grid(True)
+    if show:
+        plt.show()
+
+
+def plot_cv_results_lasso(cv_results, show=True):
+    """Ve CV-MSE theo log10(lambda) cho Lasso."""
+    plt.figure(figsize=(8, 5))
+    plt.plot(
+        cv_results["log10_lambda"],
+        cv_results["cv_mse"],
+        marker="s",
+        linewidth=1.5,
+        color="green",
+    )
+    plt.title("Lasso Lambda Selection by K-Fold CV")
     plt.xlabel("log10(lambda)")
     plt.ylabel("CV-MSE")
     plt.grid(True)
@@ -386,23 +441,36 @@ def prepare_air_quality_data(data_path=DATA_PATH, test_size=0.2):
 
 def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     """
-    Train OLS co ban, OLS chon bien, Ridge(lambda tot nhat) va Bayesian
-    Linear Regression, sau do danh gia tren test set.
+    Train OLS co ban, OLS chon bien, Ridge(lambda tot nhat), Lasso(lambda
+    tot nhat) va Bayesian Linear Regression, sau do danh gia tren test set.
 
     Returns:
-        dict gom best_lambda, cv_results, metrics_table, selection_result,
-        models, predictions, data
+        dict gom best_lambda_ridge, best_lambda_lasso, cv_results_ridge,
+        cv_results_lasso, metrics_table, selection_result, models,
+        predictions, data
     """
     data = prepare_air_quality_data(data_path=data_path)
 
-    best_lambda, cv_results = select_best_lambda(
+    # --- Ridge CV ---
+    best_lambda_ridge, cv_results_ridge = select_best_lambda(
         data["X_train"],
         data["y_train"],
         k=k,
         lambdas=lambdas,
     )
 
+    # --- Lasso CV ---
+    best_lambda_lasso, cv_results_lasso = select_best_lambda_lasso(
+        data["X_train"],
+        data["y_train"],
+        k=k,
+        lambdas=lambdas,
+    )
+
+    # --- OLS ---
     beta_ols, sigma2_ols = ols_fit(data["X_train"], data["y_train"])
+
+    # --- OLS Variable Selection ---
     selection_result = ols_variable_selection(
         data["X_train"],
         data["y_train"],
@@ -412,7 +480,13 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     selected_indices = selection_result["selected_indices"]
     X_test_selected = [[row[i] for i in selected_indices] for row in data["X_test"]]
 
-    beta_ridge = ridge_fit(data["X_train"], data["y_train"], best_lambda)
+    # --- Ridge ---
+    beta_ridge = ridge_fit(data["X_train"], data["y_train"], best_lambda_ridge)
+
+    # --- Lasso ---
+    beta_lasso = lasso_fit(data["X_train"], data["y_train"], best_lambda_lasso)
+
+    # --- Bayesian LR ---
     posterior_bayes = bayesian_linear_fit(
         data["X_train"],
         data["y_train"],
@@ -421,11 +495,14 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
         intercept_prior_variance=1e12,
     )
 
+    # --- Predictions ---
     y_pred_ols = predict(data["X_test"], beta_ols)
     y_pred_ols_selected = predict(X_test_selected, beta_ols_selected)
     y_pred_ridge = predict(data["X_test"], beta_ridge)
+    y_pred_lasso = predict(data["X_test"], beta_lasso)
     y_pred_bayes = bayesian_predict(data["X_test"], posterior_bayes)
 
+    # --- Metrics Table ---
     metrics_table = pd.DataFrame(
         [
             {"Model": "OLS", **compute_metrics(data["y_test"], y_pred_ols)},
@@ -434,8 +511,12 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
                 **compute_metrics(data["y_test"], y_pred_ols_selected),
             },
             {
-                "Model": f"Ridge (lambda={best_lambda:.6g})",
+                "Model": f"Ridge (lambda={best_lambda_ridge:.6g})",
                 **compute_metrics(data["y_test"], y_pred_ridge),
+            },
+            {
+                "Model": f"Lasso (lambda={best_lambda_lasso:.6g})",
+                **compute_metrics(data["y_test"], y_pred_lasso),
             },
             {
                 "Model": "Bayesian Linear Regression",
@@ -445,12 +526,17 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
     )
 
     if plot:
-        plot_cv_results(cv_results)
+        plot_cv_results(cv_results_ridge)
+        plot_cv_results_lasso(cv_results_lasso)
         plot_ridge_trace(data["X_train"], data["y_train"], lambdas or default_lambdas())
 
     return {
-        "best_lambda": best_lambda,
-        "cv_results": cv_results,
+        "best_lambda": best_lambda_ridge,
+        "best_lambda_ridge": best_lambda_ridge,
+        "best_lambda_lasso": best_lambda_lasso,
+        "cv_results": cv_results_ridge,
+        "cv_results_ridge": cv_results_ridge,
+        "cv_results_lasso": cv_results_lasso,
         "metrics_table": metrics_table,
         "selection_result": selection_result,
         "models": {
@@ -460,21 +546,75 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
                 "sigma2": selection_result["sigma2"],
                 "selected_indices": selected_indices,
             },
-            "ridge": {"beta": beta_ridge, "lambda": best_lambda},
+            "ridge": {"beta": beta_ridge, "lambda": best_lambda_ridge},
+            "lasso": {"beta": beta_lasso, "lambda": best_lambda_lasso},
             "bayesian": posterior_bayes,
         },
         "predictions": {
             "ols": y_pred_ols,
             "ols_selected": y_pred_ols_selected,
             "ridge": y_pred_ridge,
+            "lasso": y_pred_lasso,
             "bayesian": y_pred_bayes,
         },
         "data": data,
     }
 
 
-def test_vif_no_multicollinearity():
-    """VIF nho khi cac bien khong gan phu thuoc tuyen tinh."""
+def test_default_lambdas():
+    # Test case 1: returns correct number of lambdas
+    lams = default_lambdas()
+    assert len(lams) == 25
+
+    # Test case 2: check if boundary values are correct
+    assert lams[0] == 1e-4
+    assert abs(lams[-1] - 1e4) < 1e-9
+
+def test_df_to_2d_list():
+    # Test case 1: converts pandas DataFrame correctly
+    df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+    assert df_to_2d_list(df) == [[1.0, 3.0], [2.0, 4.0]]
+
+    # Test case 2: converts pandas Series correctly
+    ser = pd.Series([5, 6])
+    assert df_to_2d_list(ser) == [[5.0], [6.0]]
+
+def test_add_intercept():
+    # Test case 1: adds column of ones at index 0
+    X = [[1.0], [2.0]]
+    assert add_intercept(X) == [[1.0, 1.0], [1.0, 2.0]]
+
+    # Test case 2: handles empty list
+    assert add_intercept([]) == []
+
+def test_predict():
+    # Test case 1: matrix multiplies X and beta
+    X = [[1.0, 2.0], [1.0, 3.0]]
+    beta = [[1.0], [2.0]]
+    assert predict(X, beta) == [[5.0], [7.0]]
+
+    # Test case 2: check dimensions of output
+    y_pred = predict(X, beta)
+    assert len(y_pred) == 2
+    assert len(y_pred[0]) == 1
+
+def test_compute_metrics():
+    # Test case 1: calculates MAE and RMSE correctly for perfect fit
+    y_true = [[2.0], [4.0]]
+    y_pred = [[2.0], [4.0]]
+    met = compute_metrics(y_true, y_pred)
+    assert abs(met['MAE'] - 0.0) < 1e-9
+    assert abs(met['RMSE'] - 0.0) < 1e-9
+
+    # Test case 2: raises ValueError on mismatched shape
+    try:
+        compute_metrics([[1.0]], [[1.0], [2.0]])
+        assert False, "Should raise ValueError due to mismatched rows"
+    except ValueError:
+        pass
+
+def test_vif_values():
+    # Test case 1: low VIF when no multicollinearity
     X = [
         [1.0, -2.0, 4.0],
         [1.0, -1.0, 1.0],
@@ -483,30 +623,21 @@ def test_vif_no_multicollinearity():
         [1.0, 2.0, 4.0],
         [1.0, 3.0, 9.0],
     ]
-
     vifs = vif_values(X, ["intercept", "x1", "x2"])
-
     assert all(item["VIF"] < 2.0 for item in vifs)
-    print("TEST 1 PASSED: VIF thap khi khong co da cong tuyen manh")
 
-
-def test_vif_high_multicollinearity():
-    """VIF cao khi co 2 bien gan phu thuoc tuyen tinh."""
-    X = []
+    # Test case 2: high VIF when there is multicollinearity
+    X_mc = []
     for i in range(1, 15):
         x1 = float(i)
         noise = 0.01 if i % 2 == 0 else -0.01
         x2 = x1 + noise
-        X.append([1.0, x1, x2])
+        X_mc.append([1.0, x1, x2])
+    vifs_mc = vif_values(X_mc, ["intercept", "x1", "x2"])
+    assert any(item["VIF"] > 10.0 for item in vifs_mc)
 
-    vifs = vif_values(X, ["intercept", "x1", "x2"])
-
-    assert any(item["VIF"] > 10.0 for item in vifs)
-    print("TEST 2 PASSED: VIF cao khi bien gan trung tuyen tinh")
-
-
-def test_variable_selection_removes_redundant():
-    """OLS chon bien loai duoc bien da cong tuyen."""
+def test_ols_variable_selection():
+    # Test case 1: removes redundant collinear features
     X = []
     y = []
     for i in range(1, 18):
@@ -515,64 +646,118 @@ def test_variable_selection_removes_redundant():
         x2 = x1 + noise
         X.append([1.0, x1, x2])
         y.append([1.0 + 2.0 * x1 + 0.05 * noise])
-
-    result = ols_variable_selection(
-        X,
-        y,
-        ["intercept", "x1", "x2"],
-        p_threshold=1.0,
-        vif_threshold=10.0,
-    )
-
+    result = ols_variable_selection(X, y, ["intercept", "x1", "x2"], p_threshold=1.0, vif_threshold=10.0)
     assert len(result["removed_features"]) >= 1
-    assert result["removal_log"][0]["reason"] == "VIF"
-    print("TEST 3 PASSED: variable selection loai bien du thua theo VIF")
 
-
-def test_variable_selection_keeps_significant():
-    """OLS chon bien giu lai bien co y nghia."""
-    X = []
-    y = []
+    # Test case 2: keeps significant non-collinear features
+    X_sig = []
+    y_sig = []
     for i in range(1, 18):
         x1 = float(i)
         x2 = 1.0 if i % 2 == 0 else -1.0
         noise = 0.05 if i % 3 == 0 else -0.03
-        X.append([1.0, x1, x2])
-        y.append([1.0 + 2.0 * x1 + noise])
+        X_sig.append([1.0, x1, x2])
+        y_sig.append([1.0 + 2.0 * x1 + noise])
+    result_sig = ols_variable_selection(X_sig, y_sig, ["intercept", "x1", "x2"], p_threshold=0.05, vif_threshold=10.0)
+    assert "x1" in result_sig["selected_features"]
 
-    result = ols_variable_selection(
-        X,
-        y,
-        ["intercept", "x1", "x2"],
-        p_threshold=0.05,
-        vif_threshold=10.0,
-    )
+def test_select_best_lambda():
+    # Test case 1: selects best lambda from custom grid
+    X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
+    y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
+    best_lam, cv_res = select_best_lambda(X_cv, y_cv, k=3, lambdas=[0.1, 1.0, 10.0])
+    assert best_lam in [0.1, 1.0, 10.0]
 
-    assert "x1" in result["selected_features"]
-    print("TEST 4 PASSED: variable selection giu bien co y nghia")
+    # Test case 2: cv results table has correct columns
+    assert "cv_mse" in cv_res.columns
+    assert "lambda" in cv_res.columns
 
+def test_select_best_lambda_lasso():
+    # Test case 1: selects best lambda from custom grid
+    X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
+    y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
+    best_lam, cv_res = select_best_lambda_lasso(X_cv, y_cv, k=3, lambdas=[0.001, 0.01, 0.1])
+    assert best_lam in [0.001, 0.01, 0.1]
 
-def run_variable_selection_tests():
-    test_vif_no_multicollinearity()
-    test_vif_high_multicollinearity()
-    test_variable_selection_removes_redundant()
-    test_variable_selection_keeps_significant()
+    # Test case 2: cv results table has correct columns
+    assert "cv_mse" in cv_res.columns
+    assert "lambda" in cv_res.columns
 
+def test_plot_cv_results():
+    # Test case 1: runs without exception when show=False
+    cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
+    plot_cv_results(cv_res, show=False)
+    plt.close('all')
+
+    # Test case 2: verify grid exists or can plot
+    assert "cv_mse" in cv_res.columns
+
+def test_plot_cv_results_lasso():
+    # Test case 1: runs without exception when show=False
+    cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
+    plot_cv_results_lasso(cv_res, show=False)
+    plt.close('all')
+
+    # Test case 2: verify grid exists or can plot
+    assert "cv_mse" in cv_res.columns
+
+def test_ridge_coefficients_table():
+    # Test case 1: sorts by absolute value of coefficient descending
+    beta = [[1.5], [-2.5]]
+    tbl = ridge_coefficients_table(beta, ['intercept', 'feat1'])
+    assert tbl.iloc[0]['Feature'] == 'feat1'
+    assert tbl.iloc[1]['Feature'] == 'intercept'
+
+    # Test case 2: output contains Feature and Coefficient columns
+    assert "Feature" in tbl.columns
+    assert "Coefficient" in tbl.columns
+
+def test_ridge_trace_table():
+    # Test case 1: returns correct number of rows and columns
+    X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+    y_cv = [[3.0], [5.0], [7.0]]
+    tbl = ridge_trace_table(X_cv, y_cv, lambdas=[0.1, 1.0], feature_names=['intercept', 'x1'], decimals=2)
+    assert len(tbl) == 2
+
+    # Test case 2: table contains feature names as columns
+    assert 'x1' in tbl.columns
+
+def test_prepare_air_quality_data():
+    # Test case 1: loads and prepares data successfully
+    data = prepare_air_quality_data(DATA_PATH)
+    assert "X_train" in data
+    assert "y_train" in data
+    assert len(data["X_train"][0]) == 15
+
+    # Test case 2: returns correct features shape
+    assert len(data["X_test"][0]) == 15
+
+def test_train_and_compare():
+    # Test case 1: trains all 5 models and returns metrics table
+    res = train_and_compare(DATA_PATH, k=2, lambdas=[0.1, 1.0], plot=False)
+    assert "metrics_table" in res
+    assert len(res["metrics_table"]) == 5
+
+    # Test case 2: best lambda results are populated
+    assert res["best_lambda_ridge"] in [0.1, 1.0]
 
 def main():
-    result = train_and_compare(k=5, plot=False)
-
-    print(f"Best lambda: {result['best_lambda']:.6g}")
-    print("\nTop 5 lambda theo CV-MSE:")
-    print(
-        result["cv_results"]
-        .sort_values("cv_mse")[["lambda", "cv_mse"]]
-        .head()
-        .to_string(index=False)
-    )
-    print("\nTest metrics:")
-    print(result["metrics_table"].to_string(index=False))
-
+    test_default_lambdas()
+    test_df_to_2d_list()
+    test_add_intercept()
+    test_predict()
+    test_compute_metrics()
+    test_vif_values()
+    test_ols_variable_selection()
+    test_select_best_lambda()
+    test_select_best_lambda_lasso()
+    test_plot_cv_results()
+    test_plot_cv_results_lasso()
+    test_ridge_coefficients_table()
+    test_ridge_trace_table()
+    test_prepare_air_quality_data()
+    test_train_and_compare()
+    print("All tests passed in model_comparison.py!")
 
 if __name__ == "__main__":
     main()

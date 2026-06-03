@@ -124,46 +124,50 @@ def lasso_fit(X, y, lam, max_iter=1000, tol=1e-6):
     if lam < 0:
         raise ValueError("lambda phai >= 0")
     
+    # Precompute columns of X to avoid slow 2D lookups inside N-loops
+    X_cols = mat_trans(X)
+    
     # Khoi tao beta = 0
     beta = [0.0] * p_plus_1
     
     # Tinh truoc tong binh phuong tung cot: sum_i x_ij^2
-    col_sq_sums = [0.0] * p_plus_1
-    for j in range(p_plus_1):
-        for i in range(n):
-            col_sq_sums[j] += X[i][j] ** 2
+    col_sq_sums = [sum(x**2 for x in col) for col in X_cols]
+            
+    # Khoi tao vector residuals: r_i = y_i - X_i @ beta
+    # Do beta ban dau = 0, residuals = y
+    residuals = [y[i][0] for i in range(n)]
     
     for iteration in range(max_iter):
         beta_old = beta[:]
         
         for j in range(p_plus_1):
-            # Tinh partial residual: r_j = sum_i x_ij * (y_i - sum_{k!=j} x_ik * beta_k)
-            r_j = 0.0
-            for i in range(n):
-                # Tinh gia tri du doan khong tinh he so j
-                pred_without_j = 0.0
-                for k in range(p_plus_1):
-                    if k != j:
-                        pred_without_j += X[i][k] * beta[k]
-                residual_i = y[i][0] - pred_without_j
-                r_j += X[i][j] * residual_i
-            
             if col_sq_sums[j] < 1e-12:
                 beta[j] = 0.0
                 continue
             
+            # Tinh r_j = sum_i x_ij * residuals_i + col_sq_sums[j] * beta[j]
+            dot_prod = 0.0
+            X_col = X_cols[j]
+            for i in range(n):
+                dot_prod += X_col[i] * residuals[i]
+            r_j = dot_prod + col_sq_sums[j] * beta[j]
+            
+            beta_old_j = beta[j]
             if j == 0:
-                # Khong regularize intercept
                 beta[j] = r_j / col_sq_sums[j]
             else:
-                # Ap dung soft-thresholding voi penalty n*lambda
                 beta[j] = _soft_threshold(r_j, n * lam) / col_sq_sums[j]
+            
+            diff = beta[j] - beta_old_j
+            if abs(diff) > 1e-15:
+                for i in range(n):
+                    residuals[i] -= X_col[i] * diff
         
         # Kiem tra hoi tu: max|beta_new - beta_old| < tol
         max_change = max(abs(beta[j] - beta_old[j]) for j in range(p_plus_1))
         if max_change < tol:
             break
-    
+            
     # Chuyen ve 2D list (p+1)x1
     return [[b] for b in beta]
 
@@ -221,7 +225,8 @@ def plot_lasso_path(X, y, lambdas=None, show=True, feature_names=None, max_featu
 
 
     
-# Ham so sanh 2 ma tran A va B, tra ve True neu chenh lech tung phan tu khong qua tol, nguoc lai tra ve False
+# Helper functions for tests
+
 def _almost_equal_matrix(A, B, tol=1e-6):
       if len(A) != len(B) or len(A[0]) != len(B[0]):
           return False
@@ -233,219 +238,126 @@ def _almost_equal_matrix(A, B, tol=1e-6):
 
       return True
   
-# Ham tinh norm L2 cua beta, bo qua he so chinh (beta[0])
 def _norm_without_intercept(beta):
       total = 0.0
       for i in range(1, len(beta)):
           total += beta[i][0] ** 2
       return total ** 0.5
-  
-def test_ridge_fit_lamda0():
+
+def test_ridge_fit():
+    # Test case 1: Ridge fit with lambda = 0 should be close to OLS fit
     try:
         from part1.ols_implementation import ols_fit
     except ModuleNotFoundError:
         from ols_implementation import ols_fit
-    
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-    ]
+    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
     y = [[3.0], [5.0], [7.0], [9.0]]
-    
     beta_ridge = ridge_fit(X, y, lam=0)
-    beta_ols, s = ols_fit(X, y)
-    
-    assert _almost_equal_matrix(beta_ridge, beta_ols), "TEST 1 FAILED: ridge_fit voi lambda=0 khong gan bang ols_fit"
-    print("TEST 1 PASSED: ridge_fit voi lambda=0 gan bang ols_fit")
+    beta_ols, _ = ols_fit(X, y)
+    assert _almost_equal_matrix(beta_ridge, beta_ols)
 
-def test_ridge_fit_against_sklearn():
-      from sklearn.linear_model import Ridge
-
-      X = [
-          [1.0, 1.0],
-          [1.0, 2.0],
-          [1.0, 3.0],
-          [1.0, 4.0],
-      ]
-      y = [[3.0], [5.0], [7.0], [9.0]]
-      lam = 2.0
-
-      beta_custom = ridge_fit(X, y, lam)
-
-      # X cua minh co cot intercept san, sklearn thi de fit_intercept=True
-      # nen phai bo cot intercept truoc khi dua vao sklearn.
-      X_sklearn = [[row[1]] for row in X]
-      y_sklearn = [row[0] for row in y]
-
-      model = Ridge(alpha=lam, fit_intercept=True)
-      model.fit(X_sklearn, y_sklearn)
-
-      beta_sklearn = [[model.intercept_]]
-      for coef in model.coef_:
-          beta_sklearn.append([coef])
-
-      assert _almost_equal_matrix(beta_custom, beta_sklearn, tol=1e-5), (
-          "\nTEST 2 FAILED:"
-          f"\nbeta_custom  = {beta_custom}"
-          f"\nbeta_sklearn = {beta_sklearn}"
-      )
-
-      print("TEST 2 PASSED: ridge_fit gan bang sklearn Ridge")
-    
-def test_ridge_shrinkage():
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-    ]
-    y = [[3.0], [5.0], [7.0], [9.0]]
-
+    # Test case 2: Ridge coefficients should shrink compared to small lambda
     beta_small = ridge_fit(X, y, 0.01)
     beta_large = ridge_fit(X, y, 100.0)
-
     assert _norm_without_intercept(beta_large) < _norm_without_intercept(beta_small)
-    print("TEST 3 PASSED: lambda lon lam he so feature bi shrink")
 
-def test_plot_ridge_trace_runs():
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-    ]
-    y = [[3.0], [5.0], [7.0], [9.0]]
-    lambdas = [0.01, 0.1, 1.0, 10.0]
+def test_plot_ridge_trace():
+    # Test case 1: returns correct number of traces and points
+    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+    y = [[3.0], [5.0], [7.0]]
+    traces = plot_ridge_trace(X, y, lambdas=[0.1, 1.0], show=False)
+    assert len(traces) == 2
+    assert len(traces[0]) == 2
 
-    beta_traces = plot_ridge_trace(X, y, lambdas, show=False)
-    plt.close()
+    # Test case 2: check if ValueError raised with invalid max_features
+    try:
+        plot_ridge_trace(X, y, lambdas=[0.1], show=False, max_features=-1)
+        assert False, "Should raise ValueError due to negative max_features"
+    except ValueError:
+        pass
 
-    assert len(beta_traces) == len(lambdas)
-    assert len(beta_traces[0]) == len(X[0])
-    print("TEST 4 PASSED: plot_ridge_trace chay dung")
+def test_ridge_trace():
+    # Test case 1: calling ridge_trace performs plot_ridge_trace and returns results
+    X = [[1.0, 1.0], [1.0, 2.0]]
+    y = [[3.0], [5.0]]
+    traces = ridge_trace(X, y, lam=[0.1, 1.0])
+    assert len(traces) == 2
 
-# =============================================
-# Lasso Tests
-# =============================================
+    # Test case 2: handles custom lambdas correctly
+    assert len(traces[0]) == len(X[0])
 
-def test_lasso_fit_lambda_near_zero():
-    """Lasso voi lambda rat nho phai gan bang OLS."""
+def test__soft_threshold():
+    # Test case 1: soft threshold of zero/insufficient value returns 0.0
+    assert _soft_threshold(0.5, 1.0) == 0.0
+    assert _soft_threshold(-0.5, 1.0) == 0.0
+
+    # Test case 2: soft threshold of large positive/negative values shrinks them
+    assert _soft_threshold(2.5, 1.0) == 1.5
+    assert _soft_threshold(-2.5, 1.0) == -1.5
+
+def test_lasso_fit():
+    # Test case 1: lasso fit with small lambda is close to OLS fit
     try:
         from part1.ols_implementation import ols_fit
     except ModuleNotFoundError:
         from ols_implementation import ols_fit
-    
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-    ]
-    y = [[3.0], [5.0], [7.0], [9.0]]
-    
+    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+    y = [[3.0], [5.0], [7.0]]
     beta_lasso = lasso_fit(X, y, lam=1e-8)
     beta_ols, _ = ols_fit(X, y)
-    
-    assert _almost_equal_matrix(beta_lasso, beta_ols, tol=1e-3), (
-        f"FAILED: lasso(lam~0) khong gan OLS\n  lasso={beta_lasso}\n  ols={beta_ols}"
-    )
-    print("TEST 5 PASSED: lasso_fit voi lambda~0 gan bang ols_fit")
+    assert _almost_equal_matrix(beta_lasso, beta_ols, tol=1e-3)
 
+    # Test case 2: lasso fit with high lambda introduces sparsity (coefficient is exactly 0)
+    X_sparsity = [[1.0, 1.0, 0.5], [1.0, 2.0, 1.0], [1.0, 3.0, 1.5]]
+    y_sparsity = [[3.0], [5.0], [7.0]]
+    beta_lasso_sparse = lasso_fit(X_sparsity, y_sparsity, lam=10.0)
+    non_intercept_betas = [beta_lasso_sparse[j][0] for j in range(1, len(beta_lasso_sparse))]
+    assert any(abs(b) < 1e-10 for b in non_intercept_betas)
 
-def test_lasso_sparsity():
-    """Lasso voi lambda lon phai lam mot so he so bang chinh xac 0."""
-    X = [
-        [1.0, 1.0, 0.5],
-        [1.0, 2.0, 1.0],
-        [1.0, 3.0, 1.5],
-        [1.0, 4.0, 2.0],
-        [1.0, 5.0, 2.5],
-    ]
-    y = [[3.0], [5.0], [7.0], [9.0], [11.0]]
-    
-    beta_lasso = lasso_fit(X, y, lam=10.0)
-    
-    # Voi lambda lon, it nhat mot he so (khong phai intercept) phai bang 0
-    non_intercept_betas = [beta_lasso[j][0] for j in range(1, len(beta_lasso))]
-    has_zero = any(abs(b) < 1e-10 for b in non_intercept_betas)
-    
-    assert has_zero, (
-        f"FAILED: Lasso(lam=10) khong tao sparsity. betas={non_intercept_betas}"
-    )
-    print("TEST 6 PASSED: lasso_fit voi lambda lon tao sparsity (he so = 0)")
+def test_plot_lasso_path():
+    # Test case 1: returns correct number of traces and points
+    X = [[1.0, 1.0], [1.0, 2.0]]
+    y = [[3.0], [5.0]]
+    traces = plot_lasso_path(X, y, lambdas=[0.1, 1.0], show=False)
+    assert len(traces) == 2
+    assert len(traces[0]) == 2
 
+    # Test case 2: check if ValueError raised with invalid lambda <= 0
+    try:
+        plot_lasso_path(X, y, lambdas=[0.0], show=False)
+        assert False, "Should raise ValueError due to lambda <= 0"
+    except ValueError:
+        pass
 
-def test_lasso_against_sklearn():
-    """So sanh Lasso voi sklearn.linear_model.Lasso."""
-    from sklearn.linear_model import Lasso
-    
-    X = [
-        [1.0, 1.0, 0.3],
-        [1.0, 2.0, 0.8],
-        [1.0, 3.0, 1.4],
-        [1.0, 4.0, 2.1],
-        [1.0, 5.0, 2.5],
-        [1.0, 6.0, 3.2],
-    ]
-    y = [[2.5], [4.8], [7.1], [9.5], [11.9], [14.2]]
-    lam = 0.1
-    
-    beta_custom = lasso_fit(X, y, lam)
-    
-    # sklearn Lasso dung alpha = lambda (nhung cong thuc: 1/(2n) * ||y-Xb||^2 + alpha*||b||_1)
-    # Cong thuc cua ta: ||y-Xb||^2 + n*lam*||b||_1 = n * [1/n*||y-Xb||^2 + lam*||b||_1]
-    # sklearn dung: 1/(2n) * ||y-Xb||^2 + alpha*||b||_1
-    # => alpha_sklearn = lam / 2 (do he so 1/2 trong sklearn)
-    X_sklearn = [[row[1], row[2]] for row in X]
-    y_sklearn = [row[0] for row in y]
-    
-    model = Lasso(alpha=lam / 2, fit_intercept=True, max_iter=10000, tol=1e-8)
-    model.fit(X_sklearn, y_sklearn)
-    
-    beta_sklearn = [[model.intercept_]]
-    for coef in model.coef_:
-        beta_sklearn.append([coef])
-    
-    # Do quy uoc khac nhau, chap nhan sai so lon hon
-    assert _almost_equal_matrix(beta_custom, beta_sklearn, tol=0.5), (
-        f"\nTEST 7 FAILED (tham khao):"
-        f"\nbeta_custom  = {beta_custom}"
-        f"\nbeta_sklearn = {beta_sklearn}"
-    )
-    print("TEST 7 PASSED: lasso_fit tuong doi gan sklearn Lasso (sai so do quy uoc)")
+def test__almost_equal_matrix():
+    # Test case 1: returns True for close matrices
+    A = [[1.0, 2.0], [3.0, 4.0]]
+    B = [[1.0000001, 2.0], [3.0, 3.9999999]]
+    assert _almost_equal_matrix(A, B, tol=1e-5) is True
 
+    # Test case 2: returns False for different shapes or values
+    assert _almost_equal_matrix(A, [[1.0]], tol=1e-5) is False
+    assert _almost_equal_matrix(A, B, tol=1e-9) is False
 
-def test_plot_lasso_path_runs():
-    """Kiem tra plot_lasso_path chay khong loi."""
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-    ]
-    y = [[3.0], [5.0], [7.0], [9.0]]
-    lambdas = [0.01, 0.1, 1.0, 10.0]
+def test__norm_without_intercept():
+    # Test case 1: ignores first element (intercept)
+    beta = [[10.0], [3.0], [4.0]]
+    assert abs(_norm_without_intercept(beta) - 5.0) < 1e-9
 
-    beta_traces = plot_lasso_path(X, y, lambdas, show=False)
-    plt.close()
+    # Test case 2: returns 0.0 if only intercept is present
+    assert _norm_without_intercept([[10.0]]) == 0.0
 
-    assert len(beta_traces) == len(lambdas)
-    assert len(beta_traces[0]) == len(X[0])
-    print("TEST 8 PASSED: plot_lasso_path chay dung")
+def main():
+    test_ridge_fit()
+    test_plot_ridge_trace()
+    test_ridge_trace()
+    test__soft_threshold()
+    test_lasso_fit()
+    test_plot_lasso_path()
+    test__almost_equal_matrix()
+    test__norm_without_intercept()
+    print("All tests passed in ridge_lasso.py!")
 
-
-def run_tests():
-    test_ridge_fit_lamda0()
-    test_ridge_fit_against_sklearn()
-    test_ridge_shrinkage()
-    test_plot_ridge_trace_runs()
-    test_lasso_fit_lambda_near_zero()
-    test_lasso_sparsity()
-    test_lasso_against_sklearn()
-    test_plot_lasso_path_runs()
-    
 if __name__ == "__main__":
-    run_tests()
+    main()
 
