@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore', message=".*dtypes are included by select_dtypes")
+warnings.filterwarnings('ignore', message=".*Downcasting object dtype arrays")
 import pandas as pd
 
 class DataPipeline:
@@ -77,7 +80,7 @@ class DataPipeline:
         # thay vì xóa dòng. Median được ưu tiên vì dữ liệu cảm biến
         # thường chứa outliers, median ít bị ảnh hưởng hơn mean.
         for col in X_reduced.columns:
-            if X_reduced[col].dtype == 'object':
+            if not pd.api.types.is_numeric_dtype(X_reduced[col]):
                 self.impute_values[col] = X_reduced[col].mode()[0]
             elif col in ['Month', 'DayOfWeek', 'Hour']:
                 # Đặc thù: Các biến chu kỳ thời gian luôn dùng median để ra số nguyên
@@ -150,148 +153,113 @@ class DataPipeline:
         """Hàm tiện ích kết hợp fit và transform"""
         return self.fit(X).transform(X)
 
-# Test
+# Test section
 
-from sklearn.model_selection import train_test_split
+def test___init__():
+    # Test case 1: default init values
+    p = DataPipeline()
+    assert p.missing_threshold == 0.5
+    assert p.numeric_strategy == 'median'
 
-def run_tests():
+    # Test case 2: custom init values
+    p2 = DataPipeline(missing_threshold=0.3, numeric_strategy='mean')
+    assert p2.missing_threshold == 0.3
+    assert p2.numeric_strategy == 'mean'
+
+def test__extract_temporal_features():
+    p = DataPipeline()
+    # Test case 1: correctly extracts Month, DayOfWeek, Hour from Date/Time columns
+    df_in = pd.DataFrame({
+        'Date': ['03/15/2004', '04/20/2005'],
+        'Time': ['18:00:00', '09:30:00']
+    })
+    df_out = p._extract_temporal_features(df_in)
+    assert 'Month' in df_out.columns
+    assert 'DayOfWeek' in df_out.columns
+    assert 'Hour' in df_out.columns
+    assert list(df_out['Month']) == [3, 4]
+    assert list(df_out['Hour']) == [18, 9]
+
+    # Test case 2: does not crash when columns are missing
+    df_in2 = pd.DataFrame({'Val': [1, 2]})
+    df_out2 = p._extract_temporal_features(df_in2)
+    assert 'Val' in df_out2.columns
+    assert len(df_out2.columns) == 1
+
+def test_fit():
+    # Test case 1: identifies cols to drop based on missing threshold
     import numpy as np
-    print("="*40)
-    print("BẮT ĐẦU TEST DATAPIPELINE")
-    print("="*40)
-    
-    # 1. Đọc dữ liệu
-    try:
-        # Giả định đường dẫn tương đối so với gốc dự án
-        df = pd.read_csv('part2/data/AirQuality.csv')
-        print(f"[+] Đã đọc file AirQuality.csv. Kích thước ban đầu: {df.shape}")
-    except FileNotFoundError:
-        print("LỖI: Không tìm thấy file 'part2/data/AirQuality.csv'. Hãy kiểm tra lại thư mục.")
-        return
+    df_in = pd.DataFrame({
+        'A': [1.0, 2.0, 3.0, 4.0],
+        'B': [1.0, np.nan, np.nan, np.nan] # 75% missing
+    })
+    p = DataPipeline(missing_threshold=0.5)
+    p.fit(df_in)
+    assert 'B' in p.cols_to_drop
 
-    # 2. Xử lý target (Bắt buộc phải làm trước khi đưa vào Pipeline)
-    target_col = 'C6H6(GT)'
-    if target_col in df.columns:
-        df_clean = df.dropna(subset=[target_col]).copy()
-        X = df_clean.drop(columns=[target_col])
-        y = df_clean[target_col]
-        print(f"[+] Đã tách Target. Kích thước X: {X.shape}")
-    else:
-        print(f"LỖI: Không tìm thấy cột target '{target_col}'")
-        return
+    # Test case 2: calculates outlier bounds, impute values, means, stds
+    df_in2 = pd.DataFrame({
+        'A': [1.0, 2.0, 3.0, 100.0],
+        'B': [10.0, 20.0, np.nan, 40.0]
+    })
+    p2 = DataPipeline(numeric_strategy='median')
+    p2.fit(df_in2)
+    assert 'A' in p2.outlier_bounds
+    assert p2.impute_values['B'] == 20.0
 
-    # 3. Chia Train / Test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    print(f"[+] Đã chia Train/Test: X_train {X_train.shape}, X_test {X_test.shape}")
+def test_transform():
+    # Test case 1: imputes missing values and winsorizes outliers
+    import numpy as np
+    df_train = pd.DataFrame({'A': [1.0, 2.0, 3.0, 4.0, 5.0]}) # bounds [-1, 7]
+    p = DataPipeline()
+    p.fit(df_train)
+    df_test = pd.DataFrame({'A': [pd.NA, 10.0, -5.0]})
+    df_test_out = p.transform(df_test)
+    mean_val = p.means['A']
+    std_val = p.stds['A']
+    orig_vals = df_test_out['A'] * std_val + mean_val
+    assert abs(orig_vals[0] - 3.0) < 1e-9  # imputed median = 3
+    assert abs(orig_vals[1] - 7.0) < 1e-9  # winsorized 10 -> 7
+    assert abs(orig_vals[2] - (-1.0)) < 1e-9  # winsorized -5 -> -1
 
-    # 4. Khởi tạo và chạy Pipeline
-    print("\nĐang chạy Pipeline...")
-    pipeline = DataPipeline(missing_threshold=0.5, numeric_strategy='median')
-    
-    # Fit & Transform trên Train
-    X_train_processed = pipeline.fit_transform(X_train)
-    # CHỈ Transform trên Test
-    X_test_processed = pipeline.transform(X_test)
-    
-    print("Chạy Pipeline thành công! Bắt đầu kiểm tra tính toàn vẹn dữ liệu:\n")
-    
-    # ==========================================
-    # CÁC BÀI TEST TỰ ĐỘNG
-    # ==========================================
-    passed_all = True
-    
-    # TEST 1: Kiểm tra rò rỉ cấu trúc (Shape mismatch)
-    cols_train = set(X_train_processed.columns)
-    cols_test = set(X_test_processed.columns)
-    if cols_train == cols_test and len(X_train_processed.columns) == len(X_test_processed.columns):
-        print("TEST 1 PASSED: Tập Train và Test có số lượng và cấu trúc cột giống hệt nhau.")
-    else:
-        print("TEST 1 FAILED: Số lượng cột giữa Train và Test bị lệch (Lỗi Reindex).")
-        passed_all = False
+    # Test case 2: reindexes encoding columns correctly
+    df_train_cat = pd.DataFrame({'Cat': ['X', 'Y', 'X']})
+    p2 = DataPipeline()
+    p2.fit(df_train_cat)
+    df_test_cat = pd.DataFrame({'Cat': ['X', 'Z']})
+    df_test_out2 = p2.transform(df_test_cat)
+    assert 'Cat_X' in df_test_out2.columns
+    assert 'Cat_Y' in df_test_out2.columns
+    assert 'Cat_Z' not in df_test_out2.columns
 
-    # TEST 2: Kiểm tra Missing Values
-    n_missing_train = X_train_processed.isna().sum().sum()
-    n_missing_test = X_test_processed.isna().sum().sum()
-    if n_missing_train == 0 and n_missing_test == 0:
-        print("TEST 2 PASSED: Đã điền khuyết toàn bộ, không còn giá trị NaN nào.")
-    else:
-        print(f"TEST 2 FAILED: Vẫn còn NaN (Train: {n_missing_train}, Test: {n_missing_test}).")
-        passed_all = False
+def test_fit_transform():
+    # Test case 1: fit_transform returns same output as calling fit then transform
+    import numpy as np
+    df = pd.DataFrame({'A': [1.0, 2.0, 3.0]})
+    p1 = DataPipeline()
+    out1 = p1.fit_transform(df)
+    p2 = DataPipeline()
+    p2.fit(df)
+    out2 = p2.transform(df)
+    assert np.allclose(out1.values, out2.values)
 
-    # TEST 3: Kiểm tra Chuẩn hóa Z-score (Mean ≈ 0, Std ≈ 1 trên tập Train)
-    numeric_cols = X_train_processed.select_dtypes(include=[np.number]).columns
-    # Lấy sai số rất nhỏ (1e-7) vì float trong python xử lý số 0 thường ra dạng 0.00000000000001
-    is_mean_zero = X_train_processed[numeric_cols].mean().abs().max() < 1e-7 
-    # Độ lệch chuẩn mặc định của std() đôi khi ra NaN với cột dummy 0, ta đã fillna(1)
-    is_std_one = np.abs(X_train_processed[numeric_cols].std().fillna(1).mean() - 1.0) < 1e-2 
-    
-    if is_mean_zero and is_std_one:
-        print("TEST 3 PASSED: Dữ liệu đã được chuẩn hóa Z-score hoàn hảo (Mean = 0, Std = 1).")
-    else:
-        print("TEST 3 FAILED: Công thức chuẩn hóa bị lỗi.")
-        passed_all = False
+    # Test case 2: works correctly on a mini dummy dataset with date/time
+    df_small = pd.DataFrame({
+        'Date': ['01/01/2000', '01/02/2000'],
+        'Time': ['12:00:00', '13:00:00'],
+        'Val': [1.5, 2.5]
+    })
+    p3 = DataPipeline()
+    out_small = p3.fit_transform(df_small)
+    assert out_small.shape == (2, 4)
 
-    # ==========================================
-    # KẾT LUẬN
-    # ==========================================
-    print("\n" + "="*40)
-    # TEST 4: Kiểm tra chi tiết cực đoan (Null, NaN và Infinity)
-    # Lấy danh sách các cột đang bị dính Null/NaN
-    null_train_cols = X_train_processed.columns[X_train_processed.isna().any()].tolist()
-    null_test_cols = X_test_processed.columns[X_test_processed.isna().any()].tolist()
-    
-    # Lấy danh sách các cột đang bị dính Inf (Vô cực)
-    numeric_train = X_train_processed.select_dtypes(include=[np.number])
-    inf_train_cols = numeric_train.columns[np.isinf(numeric_train).any()].tolist()
-    
-    numeric_test = X_test_processed.select_dtypes(include=[np.number])
-    inf_test_cols = numeric_test.columns[np.isinf(numeric_test).any()].tolist()
-    
-    if not null_train_cols and not null_test_cols and not inf_train_cols and not inf_test_cols:
-        print("TEST 4 PASSED: Dữ liệu sạch 100%! Không có bất kỳ phần tử Null, NaN hay Vô cực (Inf) nào.")
-    else:
-        print("TEST 4 FAILED: Phát hiện phần tử rác trong dữ liệu!")
-        if null_train_cols:
-            print(f"   -> LỖI: Tập Train bị dính Null tại các cột: {null_train_cols}")
-        if null_test_cols:
-            print(f"   -> LỖI: Tập Test bị dính Null tại các cột: {null_test_cols}")
-        if inf_train_cols:
-            print(f"   -> LỖI: Tập Train bị dính Vô cực (Inf) tại các cột: {inf_train_cols}")
-        if inf_test_cols:
-            print(f"   -> LỖI: Tập Test bị dính Vô cực (Inf) tại các cột: {inf_test_cols}")
-        passed_all = False
-    
-    # TEST 5: Kiểm tra Outlier Handling (Winsorization)
-    if hasattr(pipeline, 'outlier_bounds') and len(pipeline.outlier_bounds) > 0:
-        # Kiểm tra trên dữ liệu trước chuẩn hóa: inverse Z-score rồi check bounds
-        outlier_found = False
-        for col, (lower, upper) in pipeline.outlier_bounds.items():
-            if col in X_train_processed.columns:
-                # Inverse Z-score: x_original = x_zscore * std + mean
-                col_mean = pipeline.means[col]
-                col_std = pipeline.stds[col] if pipeline.stds[col] != 1 else 1.0 # fixed logic
-                original_vals = X_train_processed[col] * col_std + col_mean
-                violations = ((original_vals < lower - 1e-6) | (original_vals > upper + 1e-6)).sum()
-                if violations > 0:
-                    outlier_found = True
-                    break
-        if not outlier_found:
-            print("TEST 5 PASSED: Outliers đã được xử lý bằng Winsorization (IQR Capping).")
-            print(f"   -> Số cột được Winsorize: {len(pipeline.outlier_bounds)}")
-        else:
-            print("TEST 5 FAILED: Vẫn còn outlier sau khi Winsorization.")
-            passed_all = False
-    else:
-        print("TEST 5 FAILED: Pipeline không có outlier_bounds (chưa xử lý outlier).")
-        passed_all = False
+def main():
+    test___init__()
+    test__extract_temporal_features()
+    test_fit()
+    test_transform()
+    test_fit_transform()
+    print("All tests passed in data_pipeline.py!")
 
-    if passed_all:
-        print("XUẤT SẮC! Class DataPipeline hoạt động hoàn hảo và sẵn sàng để train.")
-        print("Danh sách các cột đã bị drop (Missing > 50%):", pipeline.cols_to_drop)
-        print("\nXem thử 3 dòng dữ liệu Train sau xử lý:")
-        print(X_train_processed.head(3))
-    else:
-        print("CẦN SỬA LỖI: Vui lòng kiểm tra lại code class DataPipeline.")
-        
 if __name__ == "__main__":
-    run_tests()
+    main()

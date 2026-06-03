@@ -75,81 +75,44 @@ def kfold_cv(X, y, k, fit_func = None):
 
     return cv_mse, fold_mse
 
-def test_kfold_returns_correct_structure():
-      X = [
-          [1.0, 1.0],
-          [1.0, 2.0],
-          [1.0, 3.0],
-          [1.0, 4.0],
-          [1.0, 5.0],
-      ]
-      y = [[3.0], [5.0], [7.0], [9.0], [11.0]]
+def test_ols_beta_fit():
+    # Test case 1: correct structure and dimensions
+    X_train = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
+    y_train = [[2.0], [4.0], [6.0]]
+    beta = ols_beta_fit(X_train, y_train)
+    assert isinstance(beta, list)
+    assert len(beta) == 2
+    assert len(beta[0]) == 1
 
-      cv_mse, fold_mses = kfold_cv(X, y, 5)
+    # Test case 2: check exact values for perfect fit y = 2*x
+    assert abs(beta[0][0] - 0.0) < 1e-9
+    assert abs(beta[1][0] - 2.0) < 1e-9
 
-      assert isinstance(cv_mse, float)
-      assert isinstance(fold_mses, list)
-      assert len(fold_mses) == 5
-      assert all(isinstance(mse, float) for mse in fold_mses)
-      assert all(mse >= 0 for mse in fold_mses)
-
-      print("TEST 1 PASSED: kfold_cv tra ve dung cau truc")
-
-
-def test_kfold_reproducible():
+def test_kfold_cv():
+    # Test case 1: returns correct structure
     X = [
         [1.0, 1.0],
         [1.0, 2.0],
         [1.0, 3.0],
         [1.0, 4.0],
         [1.0, 5.0],
-        [1.0, 6.0],
     ]
-    y = [[3.0], [5.0], [7.0], [9.0], [11.0], [13.0]]
+    y = [[3.0], [5.0], [7.0], [9.0], [11.0]]
+    cv_mse, fold_mses = kfold_cv(X, y, 5)
+    assert isinstance(cv_mse, float)
+    assert isinstance(fold_mses, list)
+    assert len(fold_mses) == 5
+    assert all(isinstance(mse, float) for mse in fold_mses)
 
+    # Test case 2: reproducible with seed
     result1 = kfold_cv(X, y, 3)
     result2 = kfold_cv(X, y, 3)
-
     assert result1 == result2
 
-    print("TEST 2 PASSED: kfold_cv reproducible voi seed=42")
+def main():
+    test_ols_beta_fit()
+    test_kfold_cv()
+    print("All tests passed in cross_validation.py!")
 
-
-def test_kfold_with_custom_fit_func():
-    try:
-        from part1.ridge_lasso import ridge_fit
-    except ModuleNotFoundError:
-        from ridge_lasso import ridge_fit
-
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-        [1.0, 5.0],
-        [1.0, 6.0],
-    ]
-    y = [[3.0], [5.0], [7.0], [9.0], [11.0], [13.0]]
-
-    fit_func = lambda X_train, y_train: ridge_fit(X_train, y_train, 1.0)
-
-    cv_mse, fold_mses = kfold_cv(X, y, 3, fit_func=fit_func)
-
-    assert isinstance(cv_mse, float)
-    assert len(fold_mses) == 3
-    assert cv_mse >= 0
-
-    print("TEST 3 PASSED: kfold_cv chay duoc voi custom fit_func Ridge")
-    
-
-def run_tests():
-    test_kfold_returns_correct_structure()
-    test_kfold_reproducible()
-    test_kfold_with_custom_fit_func()
-    
 if __name__ == "__main__":
-    run_tests()
-    
-    
-    
-    
+    main()

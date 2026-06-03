@@ -164,67 +164,115 @@ def _almost_equal_matrix(A, B, tol=1e-5):
     return True
 
 
-def test_bayesian_weak_prior_close_to_ols():
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-        [1.0, 5.0],
-    ]
+def test__validate_xy():
+    # Test case 1: valid input does not raise error
+    _validate_xy([[1.0, 2.0], [3.0, 4.0]], [[5.0], [6.0]])
+
+    # Test case 2: invalid mismatched shape input raises ValueError
+    try:
+        _validate_xy([[1.0, 2.0]], [[5.0], [6.0]])
+        assert False, "Should raise ValueError due to mismatched rows"
+    except ValueError:
+        pass
+
+
+def test__zero_vector():
+    # Test case 1: size 3 returns correct 2D list
+    assert _zero_vector(3) == [[0.0], [0.0], [0.0]]
+
+    # Test case 2: size 1 returns correct 2D list
+    assert _zero_vector(1) == [[0.0]]
+
+
+def test__diag_precision():
+    # Test case 1: returns correct precision diagonal matrix
+    prec = _diag_precision(2, prior_variance=4.0, intercept_prior_variance=100.0)
+    assert prec == [[0.01, 0.0], [0.0, 0.25]]
+
+    # Test case 2: negative variance raises ValueError
+    try:
+        _diag_precision(2, prior_variance=-1.0, intercept_prior_variance=100.0)
+        assert False, "Should raise ValueError due to negative variance"
+    except ValueError:
+        pass
+
+
+def test__scale_matrix():
+    # Test case 1: scales positive matrix
+    A = [[1.0, 2.0], [3.0, 4.0]]
+    assert _scale_matrix(A, 2.0) == [[2.0, 4.0], [6.0, 8.0]]
+
+    # Test case 2: scales by zero
+    assert _scale_matrix(A, 0.0) == [[0.0, 0.0], [0.0, 0.0]]
+
+
+def test_bayesian_linear_fit():
+    # Test case 1: weak prior is close to OLS fit
+    X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
     y = [[3.0], [5.0], [7.0], [9.0], [11.0]]
-
     beta_ols, _ = ols_fit(X, y)
-    posterior = bayesian_linear_fit(
-        X,
-        y,
-        sigma2=1.0,
-        prior_variance=1e12,
-        intercept_prior_variance=1e12,
-    )
-
+    posterior = bayesian_linear_fit(X, y, sigma2=1.0, prior_variance=1e12, intercept_prior_variance=1e12)
     assert _almost_equal_matrix(posterior["posterior_mean"], beta_ols, tol=1e-4)
-    print("TEST 1 PASSED: weak prior cho posterior mean gan OLS")
 
-
-def test_bayesian_strong_prior_shrinks_feature_coef():
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-        [1.0, 5.0],
-    ]
-    y = [[3.2], [4.9], [7.1], [9.0], [10.8]]
-
-    weak = bayesian_linear_fit(X, y, prior_variance=1e12)
-    strong = bayesian_linear_fit(X, y, prior_variance=0.01)
-
+    # Test case 2: strong prior shrinks feature coefficients compared to weak prior
+    y_noisy = [[3.2], [4.9], [7.1], [9.0], [10.8]]
+    strong = bayesian_linear_fit(X, y_noisy, prior_variance=0.01)
+    weak = bayesian_linear_fit(X, y_noisy, prior_variance=1e12)
     assert abs(strong["posterior_mean"][1][0]) < abs(weak["posterior_mean"][1][0])
-    print("TEST 2 PASSED: prior manh lam he so feature bi shrink")
 
 
-def test_bayesian_predict_shape():
-    X = [
-        [1.0, 1.0],
-        [1.0, 2.0],
-        [1.0, 3.0],
-        [1.0, 4.0],
-    ]
-    y = [[2.0], [4.0], [6.0], [8.0]]
-    posterior = bayesian_linear_fit(X, y, prior_variance=10.0)
+def test_bayesian_predict():
+    # Test case 1: returns correct shape for predictions
+    X = [[1.0, 1.0], [1.0, 2.0]]
+    y = [[2.0], [4.0]]
+    posterior = bayesian_linear_fit(X, y, prior_variance=10.0, sigma2=1.0)
     y_hat = bayesian_predict(X, posterior)
-
     assert len(y_hat) == len(X)
     assert len(y_hat[0]) == 1
-    print("TEST 3 PASSED: bayesian_predict tra ve vector cot dung kich thuoc")
+
+    # Test case 2: prediction matches matrix multiplication of X and posterior mean
+    assert y_hat == mat_mul(X, posterior["posterior_mean"])
 
 
-def run_tests():
-    test_bayesian_weak_prior_close_to_ols()
-    test_bayesian_strong_prior_shrinks_feature_coef()
-    test_bayesian_predict_shape()
+def test_credible_intervals():
+    posterior = {
+        "posterior_mean": [[1.0], [2.0]],
+        "posterior_covariance": [[0.04, 0.0], [0.0, 0.01]]
+    }
+    # Test case 1: level 0.95 (z=1.96) returns correct interval values
+    ci_95 = credible_intervals(posterior, level=0.95)
+    assert abs(ci_95[0][0] - (1.0 - 1.96*0.2)) < 1e-9
+    assert abs(ci_95[0][1] - (1.0 + 1.96*0.2)) < 1e-9
+
+    # Test case 2: invalid level raises ValueError
+    try:
+        credible_intervals(posterior, level=-0.5)
+        assert False, "Should raise ValueError due to invalid level"
+    except ValueError:
+        pass
+
+
+def test__almost_equal_matrix():
+    # Test case 1: returns True for close matrices
+    A = [[1.0, 2.0], [3.0, 4.0]]
+    B = [[1.000001, 2.0], [3.0, 3.999999]]
+    assert _almost_equal_matrix(A, B, tol=1e-5) is True
+
+    # Test case 2: returns False for different shapes or values
+    assert _almost_equal_matrix(A, B, tol=1e-7) is False
+
+
+def main():
+    test__validate_xy()
+    test__zero_vector()
+    test__diag_precision()
+    test__scale_matrix()
+    test_bayesian_linear_fit()
+    test_bayesian_predict()
+    test_credible_intervals()
+    test__almost_equal_matrix()
+    print("All tests passed in advanced_methods.py!")
 
 
 if __name__ == "__main__":
-    run_tests()
+    main()
