@@ -119,6 +119,8 @@ def mat_scalar_mul(A, scalar):
     
     return C     
 
+#-------------------- UNITTEST --------------------#
+
 class TestMatrixHelper(unittest.TestCase):
     def test_mat_mul(self):
         # Test 1: Ma tran vuong x Ma tran vuong

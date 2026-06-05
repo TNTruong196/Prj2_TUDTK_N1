@@ -179,7 +179,7 @@ def vif(X):
     return vif_list
 
 
-# Test section
+# Unittest
 
 def _almost_equal_matrix(A, B, tol=1e-6):
     if len(A) != len(B) or len(A[0]) != len(B[0]):
@@ -190,45 +190,48 @@ def _almost_equal_matrix(A, B, tol=1e-6):
                 return False
     return True
 
+#-------------------- UNITTEST --------------------#
+
 class TestOLSImplementation(unittest.TestCase):
     def test_ols_fit(self):
-        # Test case 1: perfect fit y = 2*x
+        # Test case 1: Khop hoan hao y = 2x
         X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
         y = [[2.0], [4.0], [6.0]]
         beta, sigma2 = ols_fit(X, y)
         self.assertAlmostEqual(beta[0][0], 0.0, places=9)
         self.assertAlmostEqual(beta[1][0], 2.0, places=9)
 
-        # Test case 2: check if invalid dimensions raise ValueError
+        # Test case 2: Kiem tra kich thuoc khong hop le co bao loi hay khong
         with self.assertRaises(ValueError):
             ols_fit(X, [[1.0], [2.0]])
 
     def test_hat_matrix(self):
-        # Test case 1: Hat matrix is symmetric
+        # Test case 1: Ma tran hat la ma tran doi xung
         X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
         H = hat_matrix(X)
         H_t = mat_trans(H)
         self.assertTrue(_almost_equal_matrix(H, H_t))
 
-        # Test case 2: Hat matrix is idempotent (H * H = H)
+        # Test case 2: Ma tran hat la ma tran luy dang (H x H = H)
         H_sq = mat_mul(H, H)
         self.assertTrue(_almost_equal_matrix(H, H_sq))
 
     def test_model_metrics(self):
-        # Test case 1: perfect fit has R_squared = 1.0
+        # Test case 1: Mo hinh khop hoan hao co R^2 = 1.0
         y = [[1.0], [2.0], [3.0]]
         y_hat = [[1.0], [2.0], [3.0]]
         metrics = model_metrics(y, y_hat, 1)
         self.assertAlmostEqual(metrics["R_squared"], 1.0, places=9)
 
-        # Test case 2: check metrics key names and values for a simple imperfect fit
+        # Test case 2: Kiem tra ten cac metric key va gia tri cua chung doi voi mot
+        # mo hinh khop khong hoan hao don gian
         y_hat_imperfect = [[1.1], [1.9], [3.0]]
         metrics_imperfect = model_metrics(y, y_hat_imperfect, 1)
         self.assertIn("RSS", metrics_imperfect)
         self.assertGreater(metrics_imperfect["R_squared"], 0.9)
 
     def test_coef_inference(self):
-        # Test case 1: check output structure and size
+        # Test case 1: Kiem tra cau truc va kich thuoc cua du lieu dau ra
         X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
         y = [[2.0], [4.0], [6.0]]
         beta, sigma2 = ols_fit(X, y)
@@ -236,12 +239,13 @@ class TestOLSImplementation(unittest.TestCase):
         self.assertIn("Standard_Errors", inference)
         self.assertEqual(len(inference["Standard_Errors"]), 2)
 
-        # Test case 2: check p_values and CI bounds exist and have valid shape
+        # Test case 2: Kiem tra p-value va khoang tin cay (CI bounds) co ton tai
+        # va co dinh dang hop le hay khong
         self.assertEqual(len(inference["p_values"]), 2)
         self.assertEqual(len(inference["CI_95"]), 2)
 
     def test_vif(self):
-        # Test case 1: low multicollinearity
+        # Test case 1: Hien tuong da cong tuyen o muc thap
         X = [
             [1.0, -2.0, 4.0],
             [1.0, -1.0, 1.0],
@@ -254,7 +258,7 @@ class TestOLSImplementation(unittest.TestCase):
         self.assertEqual(len(vif_res), 2)
         self.assertTrue(all(val < 2.0 for val in vif_res))
 
-        # Test case 2: perfect collinearity returns inf
+        # Test case 2: Hien tuong cong tuyen hoan hao tra ve gia tri vo cung
         X_perfect = [
             [1.0, 1.0, 2.0],
             [1.0, 2.0, 4.0],
@@ -264,12 +268,12 @@ class TestOLSImplementation(unittest.TestCase):
         self.assertEqual(vif_res_perfect[1], float('inf'))
 
     def test__almost_equal_matrix(self):
-        # Test case 1: equal matrices return True
+        # Test case 1: Cac ma tran xap xi bang nhau tra ve gia tri true
         A = [[1.0, 2.0], [3.0, 4.0]]
         B = [[1.0000001, 2.0], [3.0, 3.9999999]]
         self.assertTrue(_almost_equal_matrix(A, B, tol=1e-5))
 
-        # Test case 2: unequal matrices return False
+        # Test case 2: Cac ma tran khong bang nhau tra ve gia tri False
         self.assertFalse(_almost_equal_matrix(A, B, tol=1e-9))
 
 if __name__ == "__main__":

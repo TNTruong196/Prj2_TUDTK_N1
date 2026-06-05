@@ -27,7 +27,8 @@ def ridge_fit(X, y, lam):
     
     return beta
 
-# Ham ve ridge trace, cho phep nguoi dung truyen vao list lambda tuong ung, neu khong truyen thi se su dung 100 gia tri lambda tu 10^-4 den 10^4
+# Ham ve ridge trace, cho phep nguoi dung truyen vao list lambda tuong ung, neu khong
+# truyen thi se su dung 100 gia tri lambda tu 10^-4 den 10^4
 def plot_ridge_trace(X, y, lambdas=None, show=True, feature_names=None, max_features=None):
     if lambdas is None:
         lambdas = [10 ** (-4 + 8 * i / 99) for i in range(100)]
@@ -126,7 +127,7 @@ def lasso_fit(X, y, lam, max_iter=1000, tol=1e-6):
     if lam < 0:
         raise ValueError("lambda phai >= 0")
     
-    # Precompute columns of X to avoid slow 2D lookups inside N-loops
+    # Tinh toan truoc cac cot cua X
     X_cols = mat_trans(X)
     
     # Khoi tao beta = 0
@@ -225,9 +226,7 @@ def plot_lasso_path(X, y, lambdas=None, show=True, feature_names=None, max_featu
 
     return beta_traces
 
-
-    
-# Helper functions for tests
+#-------------------- UNITTEST --------------------#
 
 def _almost_equal_matrix(A, B, tol=1e-6):
       if len(A) != len(B) or len(A[0]) != len(B[0]):
@@ -248,7 +247,7 @@ def _norm_without_intercept(beta):
 
 class TestRidgeLasso(unittest.TestCase):
     def test_ridge_fit(self):
-        # Test case 1: Ridge fit with lambda = 0 should be close to OLS fit
+        # Test case 1: Khop Ridge voi lambda = 0 phai gan voi khop OLS
         try:
             from part1.ols_implementation import ols_fit
         except ModuleNotFoundError:
@@ -259,44 +258,45 @@ class TestRidgeLasso(unittest.TestCase):
         beta_ols, _ = ols_fit(X, y)
         self.assertTrue(_almost_equal_matrix(beta_ridge, beta_ols))
 
-        # Test case 2: Ridge coefficients should shrink compared to small lambda
+        # Test case 2: Cac he so Ridge phai thu hep so voi khi dung lambda nho
         beta_small = ridge_fit(X, y, 0.01)
         beta_large = ridge_fit(X, y, 100.0)
         self.assertLess(_norm_without_intercept(beta_large), _norm_without_intercept(beta_small))
 
     def test_plot_ridge_trace(self):
-        # Test case 1: returns correct number of traces and points
+        # Test case 1: Tra ve dung so luong duong vet (traces) va cac diem
         X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
         y = [[3.0], [5.0], [7.0]]
         traces = plot_ridge_trace(X, y, lambdas=[0.1, 1.0], show=False)
         self.assertEqual(len(traces), 2)
         self.assertEqual(len(traces[0]), 2)
 
-        # Test case 2: check if ValueError raised with invalid max_features
+        # Test case 2: Kiem tra xem ValueError co duoc kich hoat khi max_features khong hop le
         with self.assertRaises(ValueError):
             plot_ridge_trace(X, y, lambdas=[0.1], show=False, max_features=-1)
 
     def test_ridge_trace(self):
-        # Test case 1: calling ridge_trace performs plot_ridge_trace and returns results
+        # Test case 1: Goi ridge_trace se thuc hien plot_ridge_trace va tra ve ket qua
         X = [[1.0, 1.0], [1.0, 2.0]]
         y = [[3.0], [5.0]]
         traces = ridge_trace(X, y, lam=[0.1, 1.0])
         self.assertEqual(len(traces), 2)
 
-        # Test case 2: handles custom lambdas correctly
+        # Test case 2: Xu ly cac gia tri lambda tuy chinh mot cach chinh xac
         self.assertEqual(len(traces[0]), len(X[0]))
 
     def test__soft_threshold(self):
-        # Test case 1: soft threshold of zero/insufficient value returns 0.0
+        # Test case 1: Nguong mem (soft threshold) cua gia tri bang 0 hoac khong
+        # du lon se tra ve 0.0
         self.assertEqual(_soft_threshold(0.5, 1.0), 0.0)
         self.assertEqual(_soft_threshold(-0.5, 1.0), 0.0)
 
-        # Test case 2: soft threshold of large positive/negative values shrinks them
+        # Test case 2: Nguong mem cua cac gia tri duong/am lon se thu hep chung lai
         self.assertEqual(_soft_threshold(2.5, 1.0), 1.5)
         self.assertEqual(_soft_threshold(-2.5, 1.0), -1.5)
 
     def test_lasso_fit(self):
-        # Test case 1: lasso fit with small lambda is close to OLS fit
+        # Test case 1: Khop Lasso voi lambda nho phai gan voi khop OLS
         try:
             from part1.ols_implementation import ols_fit
         except ModuleNotFoundError:
@@ -307,7 +307,7 @@ class TestRidgeLasso(unittest.TestCase):
         beta_ols, _ = ols_fit(X, y)
         self.assertTrue(_almost_equal_matrix(beta_lasso, beta_ols, tol=1e-3))
 
-        # Test case 2: lasso fit with high lambda introduces sparsity (coefficient is exactly 0)
+        # Test case 2: Khop Lasso voi lambda cao se tao ra dac tinh thua (he so bang chinh xac 0)
         X_sparsity = [[1.0, 1.0, 0.5], [1.0, 2.0, 1.0], [1.0, 3.0, 1.5]]
         y_sparsity = [[3.0], [5.0], [7.0]]
         beta_lasso_sparse = lasso_fit(X_sparsity, y_sparsity, lam=10.0)
@@ -315,33 +315,33 @@ class TestRidgeLasso(unittest.TestCase):
         self.assertTrue(any(abs(b) < 1e-10 for b in non_intercept_betas))
 
     def test_plot_lasso_path(self):
-        # Test case 1: returns correct number of traces and points
+        # Test case 1: Tra ve dung so luong duong vet (traces) va cac diem
         X = [[1.0, 1.0], [1.0, 2.0]]
         y = [[3.0], [5.0]]
         traces = plot_lasso_path(X, y, lambdas=[0.1, 1.0], show=False)
         self.assertEqual(len(traces), 2)
         self.assertEqual(len(traces[0]), 2)
 
-        # Test case 2: check if ValueError raised with invalid lambda <= 0
+        # Test case 2: Kiem tra xem ValueError co duoc kich hoat khi lambda khong hop le <= 0
         with self.assertRaises(ValueError):
             plot_lasso_path(X, y, lambdas=[0.0], show=False)
 
     def test__almost_equal_matrix(self):
-        # Test case 1: returns True for close matrices
+        # Test case 1: Tra ve True cho cac ma tran xap xi bang nhau
         A = [[1.0, 2.0], [3.0, 4.0]]
         B = [[1.0000001, 2.0], [3.0, 3.9999999]]
         self.assertTrue(_almost_equal_matrix(A, B, tol=1e-5))
 
-        # Test case 2: returns False for different shapes or values
+        # Test case 2: Tra ve False cho cac ma tran khac nhau khong gian (shape) hoac gia tri
         self.assertFalse(_almost_equal_matrix(A, [[1.0]], tol=1e-5))
         self.assertFalse(_almost_equal_matrix(A, B, tol=1e-9))
 
     def test__norm_without_intercept(self):
-        # Test case 1: ignores first element (intercept)
+        # Test case 1: Bo qua phan tu dau tien (he so chan - intercept)
         beta = [[10.0], [3.0], [4.0]]
         self.assertAlmostEqual(_norm_without_intercept(beta), 5.0, places=9)
 
-        # Test case 2: returns 0.0 if only intercept is present
+        # Test case 2: Tra ve 0.0 nao chi co he so chan (intercept)
         self.assertEqual(_norm_without_intercept([[10.0]]), 0.0)
 
 if __name__ == "__main__":
