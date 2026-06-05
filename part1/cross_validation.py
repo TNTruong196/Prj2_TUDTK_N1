@@ -79,9 +79,11 @@ def kfold_cv(X, y, k, fit_func = None):
 
     return cv_mse, fold_mse
 
+#-------------------- UNITTEST --------------------#
+
 class TestCrossValidation(unittest.TestCase):
     def test_ols_beta_fit(self):
-        # Test case 1: correct structure and dimensions
+        # Test case 1: Cau truc va kich thuoc chinh xac
         X_train = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
         y_train = [[2.0], [4.0], [6.0]]
         beta = ols_beta_fit(X_train, y_train)
@@ -89,12 +91,13 @@ class TestCrossValidation(unittest.TestCase):
         self.assertEqual(len(beta), 2)
         self.assertEqual(len(beta[0]), 1)
 
-        # Test case 2: check exact values for perfect fit y = 2*x
+        # Test case 2: Kiem tra cac gia tri chinh xac cho mo hinh khop
+        # hoan hao y = 2x
         self.assertAlmostEqual(beta[0][0], 0.0, places=9)
         self.assertAlmostEqual(beta[1][0], 2.0, places=9)
 
     def test_kfold_cv(self):
-        # Test case 1: returns correct structure
+        # Test case 1: Tra ve cau truc chinh xac
         X = [
             [1.0, 1.0],
             [1.0, 2.0],
@@ -109,7 +112,7 @@ class TestCrossValidation(unittest.TestCase):
         self.assertEqual(len(fold_mses), 5)
         self.assertTrue(all(isinstance(mse, float) for mse in fold_mses))
 
-        # Test case 2: reproducible with seed
+        # Test case 2: Co kha nang tai lap ket qua (reprocible) khi dung seed
         result1 = kfold_cv(X, y, 3)
         result2 = kfold_cv(X, y, 3)
         self.assertEqual(result1, result2)

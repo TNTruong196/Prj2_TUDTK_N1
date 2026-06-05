@@ -100,6 +100,7 @@ def residual_plots(X, y, beta_hat, show=True):
 
     return fig, axes
 
+#-------------------- UNITTEST --------------------#
 
 class TestResidualAnalysis(unittest.TestCase):
     @classmethod
@@ -108,7 +109,7 @@ class TestResidualAnalysis(unittest.TestCase):
         matplotlib.use("Agg")
 
     def test_residual_plots(self):
-        # Test case 1: returns correct figure and axes components
+        # Test case 1: Tra ve dung cac hinh ve (figure) va truc toa do (axes)
         X = [
             [1.0, 2.0, 1.5],
             [1.0, 3.0, 2.1],
@@ -135,7 +136,7 @@ class TestResidualAnalysis(unittest.TestCase):
         self.assertEqual(len(axes[0]), 2)
         self.assertEqual(len(axes[1]), 2)
 
-        # Test case 2: handles noise / other inputs and preserves savefig / plotting capability
+        # Test case 2: Xac minh tinh nang dung do thi voi du lieu nhieu (noisy)
         y_noisy = [[row[0] + 0.1] for row in y]
         fig2, axes2 = residual_plots(X, y_noisy, beta_hat, show=False)
         self.assertTrue(hasattr(fig2, "savefig"))

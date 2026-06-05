@@ -561,6 +561,7 @@ def train_and_compare(data_path=DATA_PATH, k=5, lambdas=None, plot=False):
         "data": data,
     }
 
+#-------------------- UNITTEST --------------------#
 
 class TestModelComparison(unittest.TestCase):
     @classmethod
@@ -569,56 +570,56 @@ class TestModelComparison(unittest.TestCase):
         matplotlib.use("Agg")
 
     def test_default_lambdas(self):
-        # Test case 1: returns correct number of lambdas
+        # Test case 1: Tra ve dung so luong gia tri lambda
         lams = default_lambdas()
         self.assertEqual(len(lams), 25)
 
-        # Test case 2: check if boundary values are correct
+        # Test case 2: Kiem tra cac gia tri bien co chinh xac khong
         self.assertEqual(lams[0], 1e-4)
         self.assertAlmostEqual(lams[-1], 1e4, places=9)
 
     def test_df_to_2d_list(self):
-        # Test case 1: converts pandas DataFrame correctly
+        # Test case 1: Chuyen doi chinh xac du lieu pandas DataFrame
         df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
         self.assertEqual(df_to_2d_list(df), [[1.0, 3.0], [2.0, 4.0]])
 
-        # Test case 2: converts pandas Series correctly
+        # Test case 2: Chuyen doi chinh xac du lieu pandas Series
         ser = pd.Series([5, 6])
         self.assertEqual(df_to_2d_list(ser), [[5.0], [6.0]])
 
     def test_add_intercept(self):
-        # Test case 1: adds column of ones at index 0
+        # Test case 1: Them mot cot gom cac gia tri 1 vao index 0 (he so chan)
         X = [[1.0], [2.0]]
         self.assertEqual(add_intercept(X), [[1.0, 1.0], [1.0, 2.0]])
 
-        # Test case 2: handles empty list
+        # Test case 2: Xu li danh sach rong
         self.assertEqual(add_intercept([]), [])
 
     def test_predict(self):
-        # Test case 1: matrix multiplies X and beta
+        # Test case 1: Nhan ma tran giua X va beta
         X = [[1.0, 2.0], [1.0, 3.0]]
         beta = [[1.0], [2.0]]
         self.assertEqual(predict(X, beta), [[5.0], [7.0]])
 
-        # Test case 2: check dimensions of output
+        # Test case 2: Kiem tra kich thuoc ma tran cua du lieu dau ra
         y_pred = predict(X, beta)
         self.assertEqual(len(y_pred), 2)
         self.assertEqual(len(y_pred[0]), 1)
 
     def test_compute_metrics(self):
-        # Test case 1: calculates MAE and RMSE correctly for perfect fit
+        # Test case 1: Tinh dung MAE va RMSE cho truong hop perfect fit
         y_true = [[2.0], [4.0]]
         y_pred = [[2.0], [4.0]]
         met = compute_metrics(y_true, y_pred)
         self.assertAlmostEqual(met['MAE'], 0.0, places=9)
         self.assertAlmostEqual(met['RMSE'], 0.0, places=9)
 
-        # Test case 2: raises ValueError on mismatched shape
+        # Test case 2: Kich hoat ValueError khi kich thuoc khong khop nhau
         with self.assertRaises(ValueError):
             compute_metrics([[1.0]], [[1.0], [2.0]])
 
     def test_vif_values(self):
-        # Test case 1: low VIF when no multicollinearity
+        # Test case 1: Chi so VIF thap khi khong co da cong tuyen
         X = [
             [1.0, -2.0, 4.0],
             [1.0, -1.0, 1.0],
@@ -630,7 +631,7 @@ class TestModelComparison(unittest.TestCase):
         vifs = vif_values(X, ["intercept", "x1", "x2"])
         self.assertTrue(all(item["VIF"] < 2.0 for item in vifs))
 
-        # Test case 2: high VIF when there is multicollinearity
+        # Test case 2: Chi so VIF cao khi xuat hien da cong tuyen
         X_mc = []
         for i in range(1, 15):
             x1 = float(i)
@@ -641,7 +642,7 @@ class TestModelComparison(unittest.TestCase):
         self.assertTrue(any(item["VIF"] > 10.0 for item in vifs_mc))
 
     def test_ols_variable_selection(self):
-        # Test case 1: removes redundant collinear features
+        # Test case 1: Loai bo cac dac trung cong tuyen du thua
         X = []
         y = []
         for i in range(1, 18):
@@ -653,7 +654,7 @@ class TestModelComparison(unittest.TestCase):
         result = ols_variable_selection(X, y, ["intercept", "x1", "x2"], p_threshold=1.0, vif_threshold=10.0)
         self.assertGreaterEqual(len(result["removed_features"]), 1)
 
-        # Test case 2: keeps significant non-collinear features
+        # Test case 2: Giu lai cac dac trung co y nghia va khong cong tuyen
         X_sig = []
         y_sig = []
         for i in range(1, 18):
@@ -666,83 +667,83 @@ class TestModelComparison(unittest.TestCase):
         self.assertIn("x1", result_sig["selected_features"])
 
     def test_select_best_lambda(self):
-        # Test case 1: selects best lambda from custom grid
+        # Test case 1: Chon lambda tot nhat tu grid tuy chinh
         X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
         y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
         best_lam, cv_res = select_best_lambda(X_cv, y_cv, k=3, lambdas=[0.1, 1.0, 10.0])
         self.assertIn(best_lam, [0.1, 1.0, 10.0])
 
-        # Test case 2: cv results table has correct columns
+        # Test case 2: Bang ket qua cv chua day du cac cot chinh xac
         self.assertIn("cv_mse", cv_res.columns)
         self.assertIn("lambda", cv_res.columns)
 
     def test_select_best_lambda_lasso(self):
-        # Test case 1: selects best lambda from custom grid
+        # Test case 1: Chon lambda tot nhat tu grid tuy chinh (cho Lasso)
         X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
         y_cv = [[3.0], [5.0], [7.0], [9.0], [11.0]]
         best_lam, cv_res = select_best_lambda_lasso(X_cv, y_cv, k=3, lambdas=[0.001, 0.01, 0.1])
         self.assertIn(best_lam, [0.001, 0.01, 0.1])
 
-        # Test case 2: cv results table has correct columns
+        # Test case 2: Bang ket qua cv chua day du cac cot chinh xac
         self.assertIn("cv_mse", cv_res.columns)
         self.assertIn("lambda", cv_res.columns)
 
     def test_plot_cv_results(self):
-        # Test case 1: runs without exception when show=False
+        # Test case 1: Khong xay ra loi khi dat show=False
         cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
         plot_cv_results(cv_res, show=False)
         plt.close('all')
 
-        # Test case 2: verify grid exists or can plot
+        # Test case 2: Xac minh grid ton tai hoac co the dung do thi
         self.assertIn("cv_mse", cv_res.columns)
 
     def test_plot_cv_results_lasso(self):
-        # Test case 1: runs without exception when show=False
+        # Test case 1: Khong xay ra loi khi dat show=False
         cv_res = pd.DataFrame({"log10_lambda": [0.0, 1.0], "cv_mse": [1.0, 2.0]})
         plot_cv_results_lasso(cv_res, show=False)
         plt.close('all')
 
-        # Test case 2: verify grid exists or can plot
+        # Test case 2: Xac minh grid ton tai hoac co the dung do thi
         self.assertIn("cv_mse", cv_res.columns)
 
     def test_ridge_coefficients_table(self):
-        # Test case 1: sorts by absolute value of coefficient descending
+        # Test case 1: Sap xep theo gia tri tuyet doi cua he so giam dan
         beta = [[1.5], [-2.5]]
         tbl = ridge_coefficients_table(beta, ['intercept', 'feat1'])
         self.assertEqual(tbl.iloc[0]['Feature'], 'feat1')
         self.assertEqual(tbl.iloc[1]['Feature'], 'intercept')
 
-        # Test case 2: output contains Feature and Coefficient columns
+        # Test case 2: Du lieu dau ra co chua cac cot Feature va Coefficient
         self.assertIn("Feature", tbl.columns)
         self.assertIn("Coefficient", tbl.columns)
 
     def test_ridge_trace_table(self):
-        # Test case 1: returns correct number of rows and columns
+        # Test case 1: Tra ve dung so luong hang va cot du lieu
         X_cv = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]
         y_cv = [[3.0], [5.0], [7.0]]
         tbl = ridge_trace_table(X_cv, y_cv, lambdas=[0.1, 1.0], feature_names=['intercept', 'x1'], decimals=2)
         self.assertEqual(len(tbl), 2)
 
-        # Test case 2: table contains feature names as columns
+        # Test case 2: Bang du lieu co chua ten cua cac dac trung duoi dang cot
         self.assertIn('x1', tbl.columns)
 
     def test_prepare_air_quality_data(self):
-        # Test case 1: loads and prepares data successfully
+        # Test case 1: Tai va chuan bi du lieu thanh cong
         data = prepare_air_quality_data(DATA_PATH)
         self.assertIn("X_train", data)
         self.assertIn("y_train", data)
         self.assertEqual(len(data["X_train"][0]), 15)
 
-        # Test case 2: returns correct features shape
+        # Test case 2: Tra ve dung kich thuoc cua tap features
         self.assertEqual(len(data["X_test"][0]), 15)
 
     def test_train_and_compare(self):
-        # Test case 1: trains all 5 models and returns metrics table
+        # Test case 1: Huan luyen ca 5 mo hinh va tra ve bang thong so metrics
         res = train_and_compare(DATA_PATH, k=2, lambdas=[0.1, 1.0], plot=False)
         self.assertIn("metrics_table", res)
         self.assertEqual(len(res["metrics_table"]), 5)
 
-        # Test case 2: best lambda results are populated
+        # Test case 2: Cac ket qua lambda tot nhat duoc dien day du
         self.assertIn(res["best_lambda_ridge"], [0.1, 1.0])
 
 if __name__ == "__main__":
