@@ -21,7 +21,7 @@ def mat_sub(A, B):
     if not is_matrix(A) or not is_matrix(B):
         raise ValueError("Khong phai ma tran")
     m, n = len(A), len(A[0])
-    if m != len(B) and n != len(B[0]):
+    if m != len(B) or n != len(B[0]):
         raise ValueError("Kich thuoc khong phu hop de tru")
     
     C = [[A[i][j] - B[i][j] for j in range(n)] for i in range(m)]
@@ -103,7 +103,7 @@ def mat_add(A, B):
     if not is_matrix(A) or not is_matrix(B):
         raise ValueError("Khong phai ma tran")
     m, n = len(A), len(A[0])
-    if m != len(B) and n != len(B[0]):
+    if m != len(B) or n != len(B[0]):
         raise ValueError("Kich thuoc khong phu hop de cong")
     
     C = [[A[i][j] + B[i][j] for j in range(n)] for i in range(m)]
