@@ -154,21 +154,23 @@ class DataPipeline:
         """Hàm tiện ích kết hợp fit và transform"""
         return self.fit(X).transform(X)
 
+#-------------------- UNITTEST --------------------#
+
 class TestDataPipeline(unittest.TestCase):
     def test___init__(self):
-        # Test case 1: default init values
+        # Test case 1: Cac gia tri khoi tao mac dinh
         p = DataPipeline()
         self.assertEqual(p.missing_threshold, 0.5)
         self.assertEqual(p.numeric_strategy, 'median')
 
-        # Test case 2: custom init values
+        # Test case 2: Cac gia tri khoi tao tuy chinh
         p2 = DataPipeline(missing_threshold=0.3, numeric_strategy='mean')
         self.assertEqual(p2.missing_threshold, 0.3)
         self.assertEqual(p2.numeric_strategy, 'mean')
 
     def test__extract_temporal_features(self):
         p = DataPipeline()
-        # Test case 1: correctly extracts Month, DayOfWeek, Hour from Date/Time columns
+        # Test case 1: Trich xuat chinh xac tu cot Date/Time
         df_in = pd.DataFrame({
             'Date': ['03/15/2004', '04/20/2005'],
             'Time': ['18:00:00', '09:30:00']
@@ -180,14 +182,14 @@ class TestDataPipeline(unittest.TestCase):
         self.assertEqual(list(df_out['Month']), [3, 4])
         self.assertEqual(list(df_out['Hour']), [18, 9])
 
-        # Test case 2: does not crash when columns are missing
+        # Test case 2: Khong crash khi thieu cot
         df_in2 = pd.DataFrame({'Val': [1, 2]})
         df_out2 = p._extract_temporal_features(df_in2)
         self.assertIn('Val', df_out2.columns)
         self.assertEqual(len(df_out2.columns), 1)
 
     def test_fit(self):
-        # Test case 1: identifies cols to drop based on missing threshold
+        # Test case 1: Xac dinh cac cot can loai bo dua tren nguong gia tri thieu
         import numpy as np
         df_in = pd.DataFrame({
             'A': [1.0, 2.0, 3.0, 4.0],
@@ -197,7 +199,8 @@ class TestDataPipeline(unittest.TestCase):
         p.fit(df_in)
         self.assertIn('B', p.cols_to_drop)
 
-        # Test case 2: calculates outlier bounds, impute values, means, stds
+        # Test case 2: Tinh toan ranh gioi ngoai lai (outlier bounds), gia tri can thay
+        # thay (impute values), ki vong (means) , do lech chuan (stds)
         df_in2 = pd.DataFrame({
             'A': [1.0, 2.0, 3.0, 100.0],
             'B': [10.0, 20.0, np.nan, 40.0]
@@ -208,7 +211,8 @@ class TestDataPipeline(unittest.TestCase):
         self.assertEqual(p2.impute_values['B'], 20.0)
 
     def test_transform(self):
-        # Test case 1: imputes missing values and winsorizes outliers
+        # Test case 1: Thay the cac gia tri thieu va xu li cac gia tri ngoai lai
+        # bang phuong phap Winsorize
         import numpy as np
         df_train = pd.DataFrame({'A': [1.0, 2.0, 3.0, 4.0, 5.0]}) # bounds [-1, 7]
         p = DataPipeline()
@@ -222,7 +226,7 @@ class TestDataPipeline(unittest.TestCase):
         self.assertAlmostEqual(orig_vals[1], 7.0, places=9)  # winsorized 10 -> 7
         self.assertAlmostEqual(orig_vals[2], -1.0, places=9)  # winsorized -5 -> -1
 
-        # Test case 2: reindexes encoding columns correctly
+        # Test case 2: Reindex cac cot ma hoa mot cach chinh xac
         df_train_cat = pd.DataFrame({'Cat': ['X', 'Y', 'X']})
         p2 = DataPipeline()
         p2.fit(df_train_cat)
@@ -233,7 +237,8 @@ class TestDataPipeline(unittest.TestCase):
         self.assertNotIn('Cat_Z', df_test_out2.columns)
 
     def test_fit_transform(self):
-        # Test case 1: fit_transform returns same output as calling fit then transform
+        # Test case 1: Ham fit_transform tra ve ket qua giong het nhu khi goi lan luot
+        # ham fit roi den ham transform
         import numpy as np
         df = pd.DataFrame({'A': [1.0, 2.0, 3.0]})
         p1 = DataPipeline()
@@ -243,7 +248,8 @@ class TestDataPipeline(unittest.TestCase):
         out2 = p2.transform(df)
         self.assertTrue(np.allclose(out1.values, out2.values))
 
-        # Test case 2: works correctly on a mini dummy dataset with date/time
+        # Test case 2: Hoat dong chinh xac tren mot tap du lieu gia lap nho (minidump dataset)
+        # co chua thong tin ngay gio
         df_small = pd.DataFrame({
             'Date': ['01/01/2000', '01/02/2000'],
             'Time': ['12:00:00', '13:00:00'],

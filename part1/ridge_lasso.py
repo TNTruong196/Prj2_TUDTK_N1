@@ -337,11 +337,11 @@ class TestRidgeLasso(unittest.TestCase):
         self.assertFalse(_almost_equal_matrix(A, B, tol=1e-9))
 
     def test__norm_without_intercept(self):
-        # Test case 1: Bo qua phan tu dau tien (he so chan - intercept)
+        # Test case 1: Bo qua phan tu dau tien (he so chan)
         beta = [[10.0], [3.0], [4.0]]
         self.assertAlmostEqual(_norm_without_intercept(beta), 5.0, places=9)
 
-        # Test case 2: Tra ve 0.0 nao chi co he so chan (intercept)
+        # Test case 2: Tra ve 0.0 neu chi co he so chan
         self.assertEqual(_norm_without_intercept([[10.0]]), 0.0)
 
 if __name__ == "__main__":

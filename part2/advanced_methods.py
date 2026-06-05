@@ -165,56 +165,58 @@ def _almost_equal_matrix(A, B, tol=1e-5):
                 return False
     return True
 
+#-------------------- UNITTEST --------------------#
 
 class TestAdvancedMethods(unittest.TestCase):
     def test__validate_xy(self):
-        # Test case 1: valid input does not raise error
+        # Test case 1: Dau vao hop le khong kich hoat loi
         _validate_xy([[1.0, 2.0], [3.0, 4.0]], [[5.0], [6.0]])
 
-        # Test case 2: invalid mismatched shape input raises ValueError
+        # Test case 2: Dau vao co kich thuoc khong hop le kich hoat ValueError
         with self.assertRaises(ValueError):
             _validate_xy([[1.0, 2.0]], [[5.0], [6.0]])
 
     def test__zero_vector(self):
-        # Test case 1: size 3 returns correct 2D list
+        # Test case 1: Kich thuoc bang 3 tra ve dung 2D list
         self.assertEqual(_zero_vector(3), [[0.0], [0.0], [0.0]])
 
-        # Test case 2: size 1 returns correct 2D list
+        # Test case 2: Kich thuoc bang 1 tra ve dung 2D list
         self.assertEqual(_zero_vector(1), [[0.0]])
 
     def test__diag_precision(self):
-        # Test case 1: returns correct precision diagonal matrix
+        # Test case 1: Tra ve dung precision diagonal matrix
         prec = _diag_precision(2, prior_variance=4.0, intercept_prior_variance=100.0)
         self.assertEqual(prec, [[0.01, 0.0], [0.0, 0.25]])
 
-        # Test case 2: negative variance raises ValueError
+        # Test case 2: Phuong sai am kich hoat ValueError
         with self.assertRaises(ValueError):
             _diag_precision(2, prior_variance=-1.0, intercept_prior_variance=100.0)
 
     def test__scale_matrix(self):
-        # Test case 1: scales positive matrix
+        # Test case 1: Nhan ma tran voi mot ti le (voi he so ti le duong)
         A = [[1.0, 2.0], [3.0, 4.0]]
         self.assertEqual(_scale_matrix(A, 2.0), [[2.0, 4.0], [6.0, 8.0]])
 
-        # Test case 2: scales by zero
+        # Test case 2: Nhan ma tran voi he so bang 0
         self.assertEqual(_scale_matrix(A, 0.0), [[0.0, 0.0], [0.0, 0.0]])
 
     def test_bayesian_linear_fit(self):
-        # Test case 1: weak prior is close to OLS fit
+        # Test case 1: Tien nghiem yeu (weak prior) cho ket qua gan voi khop OLS
         X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0], [1.0, 5.0]]
         y = [[3.0], [5.0], [7.0], [9.0], [11.0]]
         beta_ols, _ = ols_fit(X, y)
         posterior = bayesian_linear_fit(X, y, sigma2=1.0, prior_variance=1e12, intercept_prior_variance=1e12)
         self.assertTrue(_almost_equal_matrix(posterior["posterior_mean"], beta_ols, tol=1e-4))
 
-        # Test case 2: strong prior shrinks feature coefficients compared to weak prior
+        # Test case 2: Tien nghiem manh (strong prior) lam thu hep cac he so dac
+        # trung so voi tien nghiem yeu
         y_noisy = [[3.2], [4.9], [7.1], [9.0], [10.8]]
         strong = bayesian_linear_fit(X, y_noisy, prior_variance=0.01)
         weak = bayesian_linear_fit(X, y_noisy, prior_variance=1e12)
         self.assertLess(abs(strong["posterior_mean"][1][0]), abs(weak["posterior_mean"][1][0]))
 
     def test_bayesian_predict(self):
-        # Test case 1: returns correct shape for predictions
+        # Test case 1: Tra ve dung kich thuoc cho cac gia tri du bao
         X = [[1.0, 1.0], [1.0, 2.0]]
         y = [[2.0], [4.0]]
         posterior = bayesian_linear_fit(X, y, prior_variance=10.0, sigma2=1.0)
@@ -222,7 +224,8 @@ class TestAdvancedMethods(unittest.TestCase):
         self.assertEqual(len(y_hat), len(X))
         self.assertEqual(len(y_hat[0]), 1)
 
-        # Test case 2: prediction matches matrix multiplication of X and posterior mean
+        # Test case 2: Gia tri du bao khop voi phep nhan ma tran giua X
+        # va ki vong hau nghiem (posterior mean)
         self.assertEqual(y_hat, mat_mul(X, posterior["posterior_mean"]))
 
     def test_credible_intervals(self):
@@ -230,22 +233,23 @@ class TestAdvancedMethods(unittest.TestCase):
             "posterior_mean": [[1.0], [2.0]],
             "posterior_covariance": [[0.04, 0.0], [0.0, 0.01]]
         }
-        # Test case 1: level 0.95 (z=1.96) returns correct interval values
+        # Test case 1: Muc tin cay 0.95 (z=1.96) tra ve dung cac gia tri
+        # khoang tin cay
         ci_95 = credible_intervals(posterior, level=0.95)
         self.assertAlmostEqual(ci_95[0][0], 1.0 - 1.96*0.2, places=9)
         self.assertAlmostEqual(ci_95[0][1], 1.0 + 1.96*0.2, places=9)
 
-        # Test case 2: invalid level raises ValueError
+        # Test case 2: Muc tin cay khong hop le kich hoat ValueError
         with self.assertRaises(ValueError):
             credible_intervals(posterior, level=-0.5)
 
     def test__almost_equal_matrix(self):
-        # Test case 1: returns True for close matrices
+        # Test case 1: Tra ve True cho cac ma tran xap xi bang nhau
         A = [[1.0, 2.0], [3.0, 4.0]]
         B = [[1.000001, 2.0], [3.0, 3.999999]]
         self.assertTrue(_almost_equal_matrix(A, B, tol=1e-5))
 
-        # Test case 2: returns False for different shapes or values
+        # Test case 2: Tra ve False cho ca ma tran khac nhau ve khong gian va gia tri
         self.assertFalse(_almost_equal_matrix(A, B, tol=1e-7))
 
 if __name__ == "__main__":
