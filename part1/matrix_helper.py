@@ -1,6 +1,7 @@
 # Chu y: Toan bo ham helper duoi day co dau vao va dau ra la 2D list
 import unittest
 
+TOLERANCE = 1e-12
 
 def mat_mul(A, B):
     if not is_matrix(A) or not is_matrix(B):
@@ -36,36 +37,42 @@ def mat_inverse(A):
     if m != n:
         raise ValueError("Khong the nghich dao ma tran")
     
-    # Tao ma tran [A | I]
+    # Tao ma tran [A|I]
     aug = []
     for i in range(n):
         row = [float(x) for x in A[i]] + [1.0 if i == j else 0.0 for j in range(n)]
         aug.append(row)
         
-    # Phep khu Gauss-Jordan
+    # Phep khu Gauss-Jordan voi Partial Pivoting
     for i in range(n):
+        # Tim dong co phan tu lon nhat de lam pivot
+        max_row = i
+        for k in range(i + 1, n):
+            if abs(aug[k][i]) > abs(aug[max_row][i]):
+                max_row = k
+                
+        # Hoan doi dong hien tai voi dong co pivot lon nhat
+        if max_row != i:
+            aug[i], aug[max_row] = aug[max_row], aug[i]
+            
         pivot = aug[i][i]
         
-        if pivot == 0:
-            for k in range(i + 1, n):
-                if aug[k][i] != 0:
-                    aug[i], aug[k] = aug[k], aug[i]
-                    pivot = aug[i][i]
-                    break
-            else:
-                raise ValueError("Ma tran suy bien, khong the nghich dao")
+        # Kiem tra ma tran suy bien sau khi da hoan doi
+        if abs(pivot) < TOLERANCE:
+            raise ValueError("Ma tran suy bien, khong the nghich dao")
         
         # Chuan hoa dong chua pivot
-        for j in range(2 * n):
+        for j in range(i, 2 * n):
             aug[i][j] /= pivot
             
         # Khu cac phan tu con lai trong cot
         for k in range(n):
             if k != i:
                 factor = aug[k][i]
-                for j in range(2 * n):
-                    aug[k][j] -= factor * aug[i][j]
-                    
+                if abs(factor) > TOLERANCE:
+                    for j in range(i, 2 * n):
+                        aug[k][j] -= factor * aug[i][j]
+                        
     inv = [[aug[i][j] for j in range(n, 2 * n)] for i in range(n)]
     
     return inv
