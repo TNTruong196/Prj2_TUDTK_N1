@@ -20,7 +20,7 @@
   - [Giới thiệu](#giới-thiệu)
   - [Thông tin nhóm](#thông-tin-nhóm)
   - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-  - [🔧 Yêu cầu môi trường](#-yêu-cầu-môi-trường)
+  - [Yêu cầu môi trường](#yêu-cầu-môi-trường)
   - [Cài đặt](#cài-đặt)
   - [Hướng dẫn chạy](#hướng-dẫn-chạy)
     - [Notebook (khuyến nghị)](#notebook-khuyến-nghị)
@@ -94,7 +94,7 @@ Prj2_TUDTK_N1/
 
 ---
 
-## 🔧 Yêu cầu môi trường
+## Yêu cầu môi trường
 
 - **Python:** 3.10 trở lên
 - **Jupyter Notebook** hoặc **VS Code** (với tiện ích mở rộng Jupyter)
