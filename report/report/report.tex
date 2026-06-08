@@ -334,7 +334,7 @@ y = X\beta + \epsilon
 
 \subsection{Nghiệm OLS và ước lượng phương sai}
 
-Phương pháp Bình phương tối thiểu thông thường (OLS) xác định vector tham số $\hat{\beta}$ bằng cách tối thiểu hóa tổng bình phương các sai số giữa giá trị thực tế và giá trị dự báo. Đại lượng này được gọi là \textbf{Tổng bình phương phần dư (Residual Sum of Squares -- RSS)}:
+Phương pháp Bình phương tối thiểu thông thường (OLS) xác định vector tham số $\hat{\beta}$ bằng cách tối thiểu hóa tổng bình phương các sai số giữa giá trị thực tế và giá trị dự báo. Đại lượng này được gọi là \textbf{Tổng bình phương phần dư} (Residual Sum of Squares -- RSS):
 \begin{equation}
 RSS(\beta) = \lVert y - X\beta \rVert_2^2 = (y - X\beta)^T(y - X\beta)
 \end{equation}
@@ -356,7 +356,7 @@ Nên ta có thể gộp hai số hạng ở giữa lại với nhau:
 RSS(\beta) = y^Ty - 2\beta^TX^Ty + \beta^TX^TX\beta
 \end{equation}
 
-\textbf{Bước 2: Tính đạo hàm bậc 1 (Gradient) theo $\beta$.}
+\textbf{Bước 2: Tính đạo hàm bậc một} (gradient) \textbf{theo $\beta$.}
 Để tìm cực tiểu, ta lấy đạo hàm riêng của $RSS(\beta)$ theo vector $\beta$, sử dụng các quy tắc vi phân ma trận:
 $$\frac{\partial (a^Tx)}{\partial x} = a, \qquad \frac{\partial (x^TAx)}{\partial x} = (A + A^T)x$$
 Áp dụng cho từng số hạng trong \eqref{eq:rss_expanded}:
@@ -370,13 +370,13 @@ Gộp lại, ta được vector Gradient:
 \nabla_{\beta}RSS = -2X^Ty + 2X^TX\beta = -2X^T(y - X\beta)
 \end{equation}
 
-\textbf{Bước 3: Giải phương trình Gradient bằng 0 (Điều kiện cần).}
+\textbf{Bước 3: Giải phương trình Gradient bằng 0} (điều kiện cần).
 Đặt $\nabla_{\beta}RSS = \mathbf{0}$, ta có:
 $$-2X^T(y - X\beta) = \mathbf{0}$$
 \begin{equation}\label{eq:normal_equations}
 \iff X^TX\beta = X^Ty
 \end{equation}
-Đây là \textbf{Hệ phương trình chuẩn (Normal Equations)}.
+Đây là \textbf{Hệ phương trình chuẩn} (Normal Equations).
 
 \textbf{Bước 4: Điều kiện đủ để là điểm cực tiểu.}
 Tính ma trận đạo hàm bậc 2 (Hessian) của $RSS(\beta)$:
@@ -418,7 +418,7 @@ H^T &= \bigl(X(X^TX)^{-1}X^T\bigr)^T \\
      &= X \cdot (X^TX)^{-1} \cdot X^T = H
 \end{align*}
 
-\textbf{(ii) Tính lũy đẳng (Idempotent): $H^2 = H$.}
+\textbf{(ii) Tính lũy đẳng} (Idempotent): \textbf{$H^2 = H$}.
 
 \textit{Chứng minh.}
 \begin{align*}
@@ -450,17 +450,17 @@ Ngoài ra, $\text{trace}(H) = \text{trace}\bigl(X(X^TX)^{-1}X^T\bigr) = \text{tr
 
 \textbf{Các giả thiết Gauss--Markov (GM1 -- GM5):}
 \begin{itemize}
-    \item \textbf{GM1. Tuyến tính (Linear in parameters):} $y = X\beta + \epsilon$. Mô hình thực tế phải tuyến tính đối với các tham số $\beta$, dù có thể phi tuyến đối với các biến độc lập.
+    \item \textbf{GM1. Tuyến tính} (Linear in parameters): $y = X\beta + \epsilon$. Mô hình thực tế phải tuyến tính đối với các tham số $\beta$, dù có thể phi tuyến đối với các biến độc lập.
     \item \textbf{GM2. Không hoàn hảo đa cộng tuyến:} $\text{rank}(X) = p + 1$. Các cột của $X$ phải độc lập tuyến tính, đảm bảo $X^TX$ khả nghịch.
     \item \textbf{GM3. Ngoại sinh (Strict Exogeneity):} $\mathbb{E}[\epsilon \mid X] = \mathbf{0}$, tức sai số ngẫu nhiên có kỳ vọng bằng 0 có điều kiện trên $X$.
     \item \textbf{GM4. Đồng phương sai và không tự tương quan:} $\text{Var}(\epsilon \mid X) = \sigma^2 I_n$. Phương sai phần dư là hằng số, và không có tương quan giữa phần dư của các quan sát khác nhau.
     \item \textbf{GM5. Phần dư chuẩn:} $\epsilon \mid X \sim \mathcal{N}(\mathbf{0}, \sigma^2 I_n)$. Giả thiết này không bắt buộc cho OLS nhưng cần thiết cho kiểm định thống kê (t-test, F-test).
 \end{itemize}
 
-\textbf{Định lý Gauss--Markov.} Dưới các giả thiết GM1--GM4, ước lượng OLS $\hat{\beta}_{OLS}$ là \textbf{Ước lượng Tuyến tính Không chệch Tốt nhất (Best Linear Unbiased Estimator -- BLUE)}:
+\textbf{Định lý Gauss--Markov.} Dưới các giả thiết GM1--GM4, ước lượng OLS $\hat{\beta}_{OLS}$ là \textbf{Ước lượng tuyến tính không chệch tốt nhất} (Best Linear Unbiased Estimator - BLUE):
 \begin{itemize}
     \item \textbf{(i) Tính không chệch:} $\mathbb{E}[\hat{\beta}_{OLS}] = \beta$.
-    \item \textbf{(ii) Tính tốt nhất (Hiệu quả):} Trong số tất cả các ước lượng tuyến tính và không chệch, OLS có phương sai nhỏ nhất.
+    \item \textbf{(ii) Tính tốt nhất} (hiệu quả): Trong số tất cả các ước lượng tuyến tính và không chệch, OLS có phương sai nhỏ nhất.
 \end{itemize}
 
 Ma trận hiệp phương sai của ước lượng OLS:
@@ -491,7 +491,7 @@ Từ kết quả trên, $\hat{\beta}_{OLS} - \beta = (X^TX)^{-1}X^T\epsilon$. Đ
 &= \sigma^2 (X^TX)^{-1}
 \end{align*}
 
-\textbf{Chứng minh tính tốt nhất (BLUE).}
+\textbf{Chứng minh tính tốt nhất} (BLUE).
 
 Giả sử $\tilde{\beta} = Ay$ là một ước lượng tuyến tính không chệch khác của $\beta$, trong đó $A$ là một ma trận $(p+1) \times n$ xác định (không phụ thuộc vào $y$).
 
@@ -574,7 +574,7 @@ Như vậy bộ dữ liệu thỏa mãn đầy đủ điều kiện của đề 
 
 \subsubsection{Phân tích missing values và outliers}
 \subsubsection{Phân tích cơ chế giá trị khuyết thiếu (Missing Values)}
-Dữ liệu từ các cảm biến đo lường thường xuyên bị thiếu sót. Qua phân tích, cơ chế missing value của bộ dữ liệu này được xác định chủ yếu là \textbf{MAR (Missing At Random - Khuyết thiếu ngẫu nhiên)}.
+Dữ liệu từ các cảm biến đo lường thường xuyên bị thiếu sót. Qua phân tích, cơ chế missing value của bộ dữ liệu này được xác định chủ yếu là khuyết thiếu ngẫu nhiên (Missing At Random - MAR).
 
 \begin{figure}[H]
     \centering
@@ -584,7 +584,7 @@ Dữ liệu từ các cảm biến đo lường thường xuyên bị thiếu s�
 
 \textbf{Biện luận:} Sự cố của một cảm biến (ví dụ: cảm biến CO) thường không phụ thuộc vào chính nồng độ khí CO lúc đó, mà phụ thuộc vào các yếu tố ngoại cảnh khác như nhiệt độ hoặc độ ẩm quá cao/quá thấp khiến cảm biến bị lỗi tạm thời.
 
-\textbf{Chiến lược xử lý:} Vì lý do trên, phương pháp \textbf{Listwise Deletion (xóa dòng)} bị loại bỏ vì sẽ làm mất mát một lượng lớn thông tin quan trọng. Thay vào đó, nhóm quyết định áp dụng chiến lược \textbf{Imputation (Điền khuyết)} để bảo toàn dữ liệu. Các cột có tỉ lệ missing quá cao ($> 50\%$) mới bị loại bỏ hoàn toàn do độ tin cậy không còn đảm bảo.
+\textbf{Chiến lược xử lý:} Vì lý do trên, phương pháp xóa dòng (Listwise Deletion) bị loại bỏ vì sẽ làm mất mát một lượng lớn thông tin quan trọng. Thay vào đó, nhóm quyết định áp dụng chiến lược điền khuyết (Imputation) để bảo toàn dữ liệu. Các cột có tỉ lệ missing quá cao ($> 50\%$) mới bị loại bỏ hoàn toàn do độ tin cậy không còn đảm bảo.
 
 \subsubsection{Phân tích giá trị ngoại lai (Outliers)}
 Biểu đồ Boxplot và phân phối cho thấy dữ liệu cảm biến chứa rất nhiều giá trị ngoại lai (những thời điểm nồng độ khí tăng vọt bất thường).
@@ -595,7 +595,7 @@ Biểu đồ Boxplot và phân phối cho thấy dữ liệu cảm biến chứa
     \caption{So sánh phân phối dữ liệu trước và sau khi áp dụng IQR Winsorization.}
 \end{figure}
 
-\textbf{Chiến lược xử lý:} Nhóm quyết định không xóa các điểm ngoại lai này (vì sẽ mâu thuẫn với nỗ lực điền khuyết bảo toàn dữ liệu ở trên), mà sử dụng phương pháp \textbf{Winsorization (Cắt ngọn - IQR Capping)}. Ngoài ra, việc tồn tại nhiều outliers cũng là cơ sở để nhóm quyết định dùng \textbf{Median (Trung vị)} thay vì Mean (Trung bình) trong quá trình điền khuyết các biến số thực, do Median mang tính bền vững (robust) hơn trước outlier.
+\textbf{Chiến lược xử lý:} Nhóm quyết định không xóa các điểm ngoại lai này (vì sẽ mâu thuẫn với nỗ lực điền khuyết bảo toàn dữ liệu ở trên), mà sử dụng phương pháp cắt ngọn (Winsorization). Ngoài ra, việc tồn tại nhiều outliers cũng là cơ sở để nhóm quyết định dùng trung vị thay vì trung bình trong quá trình điền khuyết các biến số thực, do trung vị mang tính bền vững (robust) hơn trước outlier.
 
 Công thức IQR capping:
 \begin{align*}
@@ -607,11 +607,11 @@ IQR &= Q_3 - Q_1 \\
 \subsubsection{Quy trình DataPipeline}
 Pipeline gồm 6 bước, thực hiện theo đúng thứ tự và chỉ \textbf{fit trên train}:
 \begin{enumerate}
-    \item \textbf{Feature engineering:} trích xuất \texttt{Month}, \texttt{DayOfWeek}, \texttt{Hour} từ \texttt{Date/Time}, sau đó loại bỏ cột gốc.
+    \item \textbf{Trích xuất đặc trưng (Feature engineering):} trích xuất \texttt{Month}, \texttt{DayOfWeek}, \texttt{Hour} từ \texttt{Date/Time}, sau đó loại bỏ cột gốc.
     \item \textbf{Loại cột thiếu quá nhiều:} các cột có tỉ lệ missing vượt ngưỡng 50\% được loại bỏ.
-    \item \textbf{Imputation:} biến số thực điền bằng median (robust với outliers), biến phân loại điền bằng mode. Với biến thời gian, dùng median để đảm bảo giá trị hợp lệ.
-    \item \textbf{Outlier handling:} áp dụng IQR capping cho các biến số (không áp dụng cho biến thời gian).
-    \item \textbf{One-hot encoding:} mã hóa các biến phân loại, đồng thời reindex để test có cùng cấu trúc cột như train.
+    \item \textbf{Điền khuyết (Imputation):} biến số thực điền bằng median (robust với outliers), biến phân loại điền bằng mode. Với biến thời gian, dùng median để đảm bảo giá trị hợp lệ.
+    \item \textbf{Xử lý ngoại lai (Outlier handling):} áp dụng IQR capping cho các biến số (không áp dụng cho biến thời gian).
+    \item \textbf{Mã hóa One-hot:} mã hóa các biến phân loại, đồng thời reindex để test có cùng cấu trúc cột như train.
     \item \textbf{Chuẩn hóa Z-score:} $x_{std} = (x-\mu)/\sigma$ để đưa các biến về cùng thang đo.
 \end{enumerate}
 
@@ -720,7 +720,7 @@ OLS, Ridge, Lasso và Bayesian Linear Regression có hiệu suất gần như t�
 \end{figure}
 
 \subsection{Feature importance và residual plots}
-Hệ số hồi quy sau chuẩn hóa được dùng để biểu diễn \textbf{feature importance}. Các biến có |hệ số| lớn nhất là nhóm ảnh hưởng mạnh nhất tới \texttt{C6H6(GT)}; trong dữ liệu này, các cảm biến liên quan đến hydrocarbon như \texttt{PT08.S2(NMHC)} và \texttt{CO(GT)} thường có tác động mạnh, bên cạnh các biến điều kiện môi trường.
+Hệ số hồi quy sau chuẩn hóa được dùng để biểu diễn độ quan trọng của đặc trưng. Các biến có |hệ số| lớn nhất là nhóm ảnh hưởng mạnh nhất tới \texttt{C6H6(GT)}; trong dữ liệu này, các cảm biến liên quan đến hydrocarbon như \texttt{PT08.S2(NMHC)} và \texttt{CO(GT)} thường có tác động mạnh, bên cạnh các biến điều kiện môi trường.
 
 \begin{figure}[H]
     \centering
@@ -773,7 +773,11 @@ Mục này trình bày theo một khung thống nhất để người đọc d�
 \begin{mdframed}[backgroundcolor=light-gray, roundcorner=5pt, hidealllines=true]
 \textbf{BÁO CÁO KIỂM THỬ: HỒI QUY OLS \& SUY DIỄN THỐNG KÊ} \\
 Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực nghiệm. \\
-\textit{[1] Đang khớp mô hình OLS (ols\_fit)...}
+\textit{[1] Đang khớp mô hình OLS (ols\_fit)...} \\
+\textit{[2] Đang tính toán Ma trận hình mũ (hat\_matrix)...} \\
+\textit{[3] Đang tính chỉ số đánh giá mô hình (model\_metrics)...} \\
+\textit{[4] Đang suy diễn hệ số hồi quy (coef\_inference)...} \\
+\textit{[5] Đang tính giá trị VIF (vif)...}
 \end{mdframed}
 
 \subsubsection{\code{hat\_matrix}}
@@ -882,7 +886,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \small
     \begin{tabular}{lrrr}
     \toprule
-    \textbf{Biến độc lập} & \textbf{Gốc (True)} & \textbf{Ridge} & \textbf{Lasso} \\
+    \textbf{Biến độc lập} & \textbf{Hệ số gốc} & \textbf{Ridge} & \textbf{Lasso} \\
     \midrule
     Hệ số chặn & 5.000 & 5.006 & 5.005 \\
     Biến độc lập x1 & 3.500 & 3.214 & 3.210 \\
@@ -999,16 +1003,16 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \item Ghi chú trực quan hóa: Hàm gốc chỉ trả về DataFrame số liệu. Trong kiểm thử, hiệu quả biến đổi được trực quan hóa bằng biểu đồ tỷ lệ khuyết thiếu và biểu đồ hộp phân phối ngoại lai trước và sau khi đi qua pipeline (xem Hình ở Mục 5.2).
 \end{itemize}
 \begin{mdframed}[backgroundcolor=light-gray, roundcorner=5pt, hidealllines=true]
-\textbf{Các tham số học được từ Pipeline (Trên tập Train):}
+\textbf{Các tham số học được từ Pipeline} (trên tập huấn luyện):
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Cột bị loại bỏ hoàn toàn (tỷ lệ khuyết > 50\%):} \texttt{['Biến\_B\_Khuyết\_Nhiều']}
+    \item \textbf{Cột bị loại bỏ hoàn toàn} (tỷ lệ khuyết $> 50\%$): \texttt{['Biến\_B\_Khuyết\_Nhiều']}
     \item \textbf{Giá trị điền khuyết đại diện:}
     \begin{itemize}
         \item \texttt{Biến\_A}: 14.8208
         \item \texttt{Biến\_C}: 0.5059
         \item \texttt{Loại\_Khu\_Vực}: Ngoại ô
     \end{itemize}
-    \item \textbf{Giới hạn ngoại lai phát hiện (Khoảng biên IQR Winsorization):}
+    \item \textbf{Giới hạn ngoại lai phát hiện} (khoảng biên IQR Winsorization):
     \begin{itemize}
         \item \texttt{Biến\_A}: Dưới = 4.2348, Trên = 25.6238
         \item \texttt{Biến\_C}: Dưới = 0.2823, Trên = 0.7452
@@ -1059,7 +1063,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \small
     \begin{tabular}{lrrrrr}
     \toprule
-    \textbf{Biến độc lập} & \textbf{Gốc} & \textbf{Hệ số OLS} & \textbf{Bayes (Prior yếu)} & \textbf{Bayes (Prior chuẩn)} & \textbf{Bayes (Prior mạnh)} \\
+    \textbf{Biến độc lập} & \textbf{Gốc} & \textbf{Hệ số OLS} & \textbf{Bayes} (Prior yếu) & \textbf{Bayes} (Prior chuẩn) & \textbf{Bayes} (Prior mạnh) \\
     \midrule
     Hệ số chặn ($b_0$) & 3.000 & 3.177 & 3.177179 & 3.180790 & 3.210404 \\
     Biến x1 ($b_1$) & 2.000 & 1.897 & 1.897247 & 1.838171 & 0.465670 \\
