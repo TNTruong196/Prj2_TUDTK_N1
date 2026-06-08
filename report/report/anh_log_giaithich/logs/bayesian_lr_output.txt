@@ -1,0 +1,34 @@
+======================================================================
+        BÁO CÁO KIỂM THỬ: HỒI QUY TUYẾN TÍNH BAYES (BAYESIAN LR)
+======================================================================
+Tổng quan dữ liệu: n = 25 mẫu quan sát, p = 2 biến thực nghiệm.
+----------------------------------------------------------------------
+[1] Đang khớp mô hình Bayesian LR dưới các chế độ phương sai Prior khác nhau...
+
+>>> SO SÁNH SỰ CO RÚT HỆ SỐ HỒI QUY DƯỚI CÁC PHƯƠNG SAI PRIOR KHÁC NHAU
+┌────────────────┬──────────┬──────────┬─────────────────┬─────────────────┬─────────────────┐
+│ Biến độc lập   │ Gốc (True│ Hệ số OLS│ Bayes (PriorYếu)│ Bayes (PriorChu)│ Bayes (PriorMạn)│
+├────────────────┼──────────┼──────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Hệ số chặn (b0) │    3.000 │    3.177 │        3.177179 │        3.180790 │        3.210404 │
+│ Biến x1 (b1)   │    2.000 │    1.897 │        1.897247 │        1.838171 │        0.465670 │
+│ Biến x2 (b2)   │   -1.500 │   -1.120 │       -1.120425 │       -1.074257 │       -0.190493 │
+└────────────────┴──────────┴──────────┴─────────────────┴─────────────────┴─────────────────┘
+Nhận xét: Phương sai Prior càng nhỏ (Prior mạnh - 0.01) càng kéo hệ số về giá trị tiên nghiệm (0.0).
+
+[2] Đang tính toán Khoảng tin cậy Bayesian (credible_intervals)...
+
+>>> KHOẢNG TIN CẬY BAYESIAN 95% (Mô hình Prior Chuẩn)
+┌────────────────┬──────────────┬──────────────────────────────┐
+│ Biến độc lập   │ Kỳ vọng Post │ Khoảng tin cậy Bayesian 95%  │
+├────────────────┼──────────────┼──────────────────────────────┤
+│ Hệ số chặn (b0) │       3.1808 │ [   2.8734,    3.4882]           │
+│ Biến x1 (b1)   │       1.8382 │ [   1.5180,    2.1584]           │
+│ Biến x2 (b2)   │      -1.0743 │ [  -1.4049,   -0.7436]           │
+└────────────────┴──────────────┴──────────────────────────────┘
+
+[Lưu đồ thị] Bản đồ nhiệt hiệp phương sai Posterior đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\bayesian_posterior_covariance.png
+[Lưu đồ thị] Đồ thị khoảng tin cậy đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\bayesian_credible_intervals.png
+
+======================================================================
+        HOÀN THÀNH KIỂM THỬ HỒI QUY TUYẾN TÍNH BAYES
+======================================================================

@@ -1,0 +1,31 @@
+======================================================================
+        BÁO CÁO KIỂM THỬ: SO SÁNH HIỆU NĂNG TẤT CẢ 5 MÔ HÌNH HỒI QUY
+======================================================================
+Đang tải tập dữ liệu thực tế AirQuality từ: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\part2\data\AirQuality.csv
+Đang huấn luyện train_and_compare kết hợp 5-Fold CV...
+
+>>> BẢNG CHỈ SỐ ĐÁNH GIÁ HIỆU NĂNG MÔ HÌNH (Trên tập kiểm thử Test Set)
+┌──────────────────────────────┬────────────┬────────────┬────────────┐
+│ Tên mô hình hồi quy          │ MAE        │ RMSE       │ R-squared  │
+├──────────────────────────────┼────────────┼────────────┼────────────┤
+│ OLS (Đầy đủ biến)            │    0.88998 │    1.44609 │    0.96361 │
+│ OLS (Chọn biến)              │    1.42849 │    2.07262 │    0.92524 │
+│ Hồi quy Ridge (lambda=0.1)   │    0.88996 │    1.44608 │    0.96361 │
+│ Hồi quy Lasso (lambda=0.0001)│    0.88986 │    1.44602 │    0.96361 │
+│ Hồi quy tuyến tính Bayes     │    0.88998 │    1.44609 │    0.96361 │
+└──────────────────────────────┴────────────┴────────────┴────────────┘
+
+>>> TỔNG HỢP QUÁ TRÌNH LỰA CHỌN ĐẶC TRƯNG (Backward Elimination)
+Số lượng biến độc lập ban đầu: 14 (cộng hệ số chặn)
+Số lượng biến được giữ lại: 12 (cộng hệ số chặn)
+Các biến bị loại bỏ do đa cộng tuyến/không ý nghĩa: ['PT08.S2(NMHC)', 'T']
+Nhật ký loại bỏ biến:
+  Bước 1: Loại bỏ 'PT08.S2(NMHC)' do chỉ số VIF cao (31.7425)
+  Bước 2: Loại bỏ 'T' do chỉ số VIF cao (14.5495)
+----------------------------------------------------------------------
+[Lưu đồ thị] Biểu đồ so sánh hiệu năng các mô hình đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\model_comparison_metrics.png
+[Lưu đồ thị] Các biểu đồ phân tán Thực tế vs Dự báo đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\model_actual_vs_predicted.png
+
+======================================================================
+        HOÀN THÀNH SO SÁNH HIỆU NĂNG TẤT CẢ CÁC MÔ HÌNH HỒI QUY
+======================================================================

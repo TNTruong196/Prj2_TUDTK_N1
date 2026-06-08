@@ -1,0 +1,51 @@
+======================================================================
+  BÁO CÁO KIỂM THỬ: HỒI QUY RIDGE, LASSO, K-FOLD CV & CHẨN ĐOÁN PHẦN DƯ
+======================================================================
+Tổng quan dữ liệu: n = 50 mẫu quan sát, p = 5 đặc trưng thực tế.
+----------------------------------------------------------------------
+[1] Đang khớp mô hình Ridge và Lasso với lambda mẫu (Ridge=1.0, Lasso=0.1)...
+
+>>> SO SÁNH HỆ SỐ HỒI QUY (lambda_ridge=1.0, lambda_lasso=0.1)
+┌────────────────────────┬──────────┬──────────┬──────────┐
+│ Biến độc lập           │ Gốc (True│ Ridge    │ Lasso    │
+├────────────────────────┼──────────┼──────────┼──────────┤
+│ Hệ số chặn             │    5.000 │    5.006 │    5.005 │
+│ Biến độc lập x1        │    3.500 │    3.214 │    3.210 │
+│ Biến độc lập x2        │   -2.000 │   -2.090 │   -2.055 │
+│ Biến độc lập x3 (nhiễu) │    0.000 │    0.053 │    0.000 │
+│ Biến độc lập x4        │    1.200 │    1.141 │    1.098 │
+│ Biến độc lập x5        │   -0.500 │   -0.595 │   -0.573 │
+└────────────────────────┴──────────┴──────────┴──────────┘
+Nhận xét: Lasso có khả năng triệt tiêu hoàn toàn hệ số của biến nhiễu x3 (về đúng 0.000)!
+
+[2] Đang vẽ và lưu vết hệ số hồi quy Ridge (Ridge Trace)...
+[Lưu đồ thị] Đường vết hệ số Ridge đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\ridge_coefficient_trace.png
+[3] Đang vẽ và lưu vết hệ số hồi quy Lasso (Lasso Path)...
+[Lưu đồ thị] Đường vết hệ số Lasso đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\lasso_coefficient_path.png
+
+[4] Đang chạy kiểm định 5-Fold Cross Validation (kfold_cv)...
+
+>>> KẾT QUẢ ĐÁNH GIÁ CHÉO 5-FOLD CROSS-VALIDATION
+┌──────────┬──────────────┬──────────────┐
+│ Lambda   │ Ridge CV-MSE │ Lasso CV-MSE │
+├──────────┼──────────────┼──────────────┤
+│    0.001 │       0.5969 │       0.5969 │
+│    0.010 │       0.5970 │       0.5970 │
+│    0.100 │       0.5980 │       0.6088 │
+│    0.500 │       0.6035 │       1.1288 │
+│    1.000 │       0.6134 │       2.6772 │
+│    5.000 │       0.7924 │      29.7909 │
+│   10.000 │       1.2064 │      45.3344 │
+│   50.000 │       6.8432 │      45.3344 │
+│  100.000 │      13.4151 │      45.3344 │
+├──────────┼──────────────┼──────────────┤
+│ Tối ưu   │        0.001 │        0.001 │
+└──────────┴──────────────┴──────────────┘
+[Lưu đồ thị] Biểu đồ tối ưu hóa Lambda đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\cv_optimal_lambda.png
+
+[5] Đang khởi tạo chẩn đoán phần dư (residual_plots)...
+[Lưu đồ thị] 4 biểu đồ chẩn đoán phần dư đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\residual_diagnostics.png
+
+======================================================================
+        HOÀN THÀNH KIỂM THỬ RIDGE, LASSO, CV & PHẦN DƯ
+======================================================================

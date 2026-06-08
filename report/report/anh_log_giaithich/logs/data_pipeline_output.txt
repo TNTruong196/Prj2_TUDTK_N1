@@ -1,0 +1,62 @@
+======================================================================
+            BÁO CÁO KIỂM THỬ: TIỀN XỬ LÝ DỮ LIỆU (DATA PIPELINE)
+======================================================================
+Mẫu dữ liệu thô ban đầu (5 dòng đầu tiên):
+      Date     Time    Biến_A  Biến_B_Khuyết_Nhiều   Biến_C Loại_Khu_Vực
+03/10/2004 00:00:00 17.483571                  NaN 0.476261      Ngoại ô
+03/10/2004 01:00:00 14.308678            45.793547 0.687201    Nông thôn
+03/10/2004 02:00:00 18.238443                  NaN 0.498056    Nông thôn
+03/10/2004 03:00:00 22.615149                  NaN 0.406741      Ngoại ô
+03/10/2004 04:00:00 13.829233                  NaN 0.370506    Thành thị
+----------------------------------------------------------------------
+[1] Đang khởi tạo và khớp DataPipeline...
+
+>>> CÁC THAM SỐ HỌC ĐƯỢC TỪ PIPELINE (Trên tập Train)
+Các cột bị loại bỏ hoàn toàn (tỷ lệ khuyết > 50%): ['Biến_B_Khuyết_Nhiều']
+Giá trị điền khuyết đại diện:
+  - Biến_A: 14.820869804450242
+  - Biến_C: 0.5059702754712002
+  - Loại_Khu_Vực: Ngoại ô
+  - Month: 3.0
+  - DayOfWeek: 4.0
+  - Hour: 11.0
+Giới hạn ngoại lai phát hiện (Khoảng biên IQR Winsorization):
+  - Biến_A: Dưới = 4.2348, Trên = 25.6238
+  - Biến_C: Dưới = 0.2823, Trên = 0.7452
+Cột phân loại phát hiện: ['Loại_Khu_Vực']
+Danh sách cột đầu ra sau khi mã hóa One-Hot: ['Biến_A', 'Biến_C', 'Month', 'DayOfWeek', 'Hour', 'Loại_Khu_Vực_Ngoại ô', 'Loại_Khu_Vực_Nông thôn', 'Loại_Khu_Vực_Thành thị']
+----------------------------------------------------------------------
+[2] Đang chuyển đổi dữ liệu thô (transform)...
+
+Mẫu dữ liệu sau xử lý (5 dòng đầu tiên, dạng chuẩn hóa Z-score):
+   Biến_A    Biến_C  Month  DayOfWeek      Hour  Loại_Khu_Vực_Ngoại ô  Loại_Khu_Vực_Nông thôn  Loại_Khu_Vực_Thành thị
+ 0.545114 -0.405501    0.0   -1.32665 -1.563629              1.298336               -0.682556               -0.666920
+-0.116175  1.890481    0.0   -1.32665 -1.422762             -0.762515                1.450431               -0.666920
+ 0.702344 -0.168272    0.0   -1.32665 -1.281894             -0.762515                1.450431               -0.666920
+ 1.613955 -1.162193    0.0   -1.32665 -1.141027              1.298336               -0.682556               -0.666920
+-0.216037 -1.556595    0.0   -1.32665 -1.000159             -0.762515               -0.682556                1.484435
+----------------------------------------------------------------------
+
+>>> THỐNG KÊ ĐÁNH GIÁ SAU KHI TIỀN XỬ LÝ
+Tổng số lượng giá trị NaN còn lại trong dữ liệu đã xử lý: 0
+
+Giá trị Trung bình và Độ lệch chuẩn sau chuẩn hóa Z-score:
+┌───────────────────────────┬──────────────┬──────────────┐
+│ Cột đặc trưng             │ Trung bình(≈0│ Lệch chuẩn(≈1│
+├───────────────────────────┼──────────────┼──────────────┤
+│ Biến_A                    │     0.000000 │     1.000000 │
+│ Biến_C                    │     0.000000 │     1.000000 │
+│ Month                     │     0.000000 │     0.000000 │
+│ DayOfWeek                 │     0.000000 │     1.000000 │
+│ Hour                      │     0.000000 │     1.000000 │
+│ Loại_Khu_Vực_Ngoại ô      │    -0.000000 │     1.000000 │
+│ Loại_Khu_Vực_Nông thôn    │    -0.000000 │     1.000000 │
+│ Loại_Khu_Vực_Thành thị    │     0.000000 │     1.000000 │
+└───────────────────────────┴──────────────┴──────────────┘
+
+[Lưu đồ thị] So sánh ngoại lai Winsorization đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\pipeline_outlier_winsorization.png
+[Lưu đồ thị] Biểu đồ tỷ lệ khuyết đã được lưu tại: C:\TranNhatTruong_2026\HK1\Toan Ung Dung\Prj2\main\TEST_TO_REPORT\plots\pipeline_missing_values.png
+
+======================================================================
+             HOÀN THÀNH TIỀN XỬ LÝ PIPELINE DỮ LIỆU
+======================================================================
