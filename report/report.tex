@@ -5,7 +5,11 @@
 \usepackage{lmodern}
 \usepackage{pdflscape}
 \usepackage{rotating}
-\usepackage{a4wide,amssymb,epsfig,latexsym,multicol,array,hhline,fancyhdr}
+\usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{hhline}
+\usepackage{fancyhdr}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{booktabs}
@@ -13,35 +17,24 @@
 \usepackage{float}
 \usepackage{placeins}
 \usepackage{lastpage} 
-% \usepackage[lined,boxed,commentsnumbered]{algorithm2e}
 \usepackage{enumerate}
-\usepackage{color}
-\usepackage{graphicx}					% Standard graphics package
-\usepackage{array}
-\usepackage{tabularx, caption}
+\usepackage{graphicx}
+\usepackage{tabularx}
 \usepackage{multirow}
 \usepackage[framemethod=tikz]{mdframed}% For highlighting paragraph backgrounds
-\usepackage{multicol}
-\usepackage{rotating}
-\usepackage{graphics}
 \usepackage{wrapfig}
 \usepackage{geometry}
 \usepackage{setspace}
-\usepackage{epsfig}
 \usepackage{tikz}
-\usepackage{listings}
 \usetikzlibrary{arrows,snakes,backgrounds}
-\usepackage{hyperref}
 \usepackage{indentfirst}
 \usepackage{cases} 
 \usepackage{listings}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-% \usepackage[english]{babel}
 \renewcommand{\baselinestretch}{1.5}
 \usepackage{xcolor}
 \renewcommand{\figurename}{Hình}
-\usepackage{xcolor}
 \definecolor{light-gray}{gray}{0.95}
 \newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
 
@@ -63,6 +56,7 @@
 %%%%%%%%
 \usepackage{longtable}
 \usepackage[shortlabels]{enumitem}
+\usepackage{hyperref}
 \hypersetup{urlcolor=blue,linkcolor=black,citecolor=black,colorlinks=true} 
 
 \setlength{\headheight}{40pt}
@@ -158,6 +152,8 @@
 
 \begin{document}
 
+\pagenumbering{gobble}
+
 % --- PHẦN NỘI DUNG TỪ title.tex ---
 \begin{titlepage}
 \begin{center}
@@ -238,7 +234,7 @@ Trong lúc thực hiện đồ án này không tránh khỏi những khó khăn 
 \section*{Lời cam đoan}
 \addcontentsline{toc}{section}{Lời cam đoan}
 
-Trong đồ án lần này, chúng em cam đoan rằng tất cả các nội dung mà chúng em thực hiện đều là kết quả của sự nghiên cứu và làm việc của nhóm chung em. 
+Trong đồ án lần này, chúng em cam đoan rằng tất cả các nội dung mà chúng em thực hiện đều là kết quả của sự nghiên cứu và làm việc của nhóm chúng em. 
 
 Chúng em cam đoan rằng không sao chép code hoặc báo cáo từ nhóm khác hay từ Internet mà không
 trích dẫn nguồn. 
@@ -334,7 +330,7 @@ y = X\beta + \epsilon
 
 \subsection{Nghiệm OLS và ước lượng phương sai}
 
-Phương pháp Bình phương tối thiểu thông thường (OLS) xác định vector tham số $\hat{\beta}$ bằng cách tối thiểu hóa tổng bình phương các sai số giữa giá trị thực tế và giá trị dự báo. Đại lượng này được gọi là \textbf{Tổng bình phương phần dư} (Residual Sum of Squares -- RSS):
+Phương pháp Bình phương tối thiểu thông thường (OLS) xác định vector tham số $\hat{\beta}$ bằng cách tối thiểu hóa tổng bình phương các sai số giữa giá trị thực tế và giá trị dự báo. Đại lượng này được gọi là tổng bình phương phần dư (RSS):
 \begin{equation}
 RSS(\beta) = \lVert y - X\beta \rVert_2^2 = (y - X\beta)^T(y - X\beta)
 \end{equation}
@@ -348,17 +344,17 @@ RSS(\beta) = \lVert y - X\beta \rVert_2^2 = (y - X\beta)^T(y - X\beta)
 
 \textbf{Bước 1: Khai triển hàm RSS.}
 Ta thực hiện nhân phân phối các ma trận:
-$$RSS(\beta) = y^Ty - y^TX\beta - (X\beta)^Ty + (X\beta)^T(X\beta)$$
-Sử dụng tính chất chuyển vị của ma trận tích $(AB)^T = B^TA^T$, ta có $(X\beta)^T = \beta^TX^T$. Do kết quả của $y^TX\beta$ là một số vô hướng (scalar) --- kích thước $1 \times 1$, chuyển vị của một số vô hướng bằng chính nó:
-$$(y^TX\beta)^T = \beta^TX^Ty$$
+\[RSS(\beta) = y^Ty - y^TX\beta - (X\beta)^Ty + (X\beta)^T(X\beta)\]
+Sử dụng tính chất chuyển vị của ma trận tích $(AB)^T = B^TA^T$, ta có $(X\beta)^T = \beta^TX^T$. Do kết quả của $y^TX\beta$ là một số vô hướng --- kích thước $1 \times 1$, chuyển vị của một số vô hướng bằng chính nó:
+\[(y^TX\beta)^T = \beta^TX^Ty\]
 Nên ta có thể gộp hai số hạng ở giữa lại với nhau:
 \begin{equation}\label{eq:rss_expanded}
 RSS(\beta) = y^Ty - 2\beta^TX^Ty + \beta^TX^TX\beta
 \end{equation}
 
-\textbf{Bước 2: Tính đạo hàm bậc một} (gradient) \textbf{theo $\beta$.}
+\textbf{Bước 2: Tính đạo hàm bậc một} \textbf{theo $\beta$.}
 Để tìm cực tiểu, ta lấy đạo hàm riêng của $RSS(\beta)$ theo vector $\beta$, sử dụng các quy tắc vi phân ma trận:
-$$\frac{\partial (a^Tx)}{\partial x} = a, \qquad \frac{\partial (x^TAx)}{\partial x} = (A + A^T)x$$
+\[\frac{\partial (a^Tx)}{\partial x} = a, \qquad \frac{\partial (x^TAx)}{\partial x} = (A + A^T)x\]
 Áp dụng cho từng số hạng trong \eqref{eq:rss_expanded}:
 \begin{itemize}
     \item Đạo hàm của $y^Ty$ (hằng số đối với $\beta$) là $\mathbf{0}$.
@@ -372,16 +368,16 @@ Gộp lại, ta được vector Gradient:
 
 \textbf{Bước 3: Giải phương trình Gradient bằng 0} (điều kiện cần).
 Đặt $\nabla_{\beta}RSS = \mathbf{0}$, ta có:
-$$-2X^T(y - X\beta) = \mathbf{0}$$
+\[-2X^T(y - X\beta) = \mathbf{0}\]
 \begin{equation}\label{eq:normal_equations}
 \iff X^TX\beta = X^Ty
 \end{equation}
-Đây là \textbf{Hệ phương trình chuẩn} (Normal Equations).
+Đây là hệ phương trình chuẩn.
 
 \textbf{Bước 4: Điều kiện đủ để là điểm cực tiểu.}
-Tính ma trận đạo hàm bậc 2 (Hessian) của $RSS(\beta)$:
-$$\nabla^2_{\beta}RSS = \frac{\partial}{\partial \beta}(2X^TX\beta - 2X^Ty) = 2X^TX$$
-Với giả thiết GM2 (Không hoàn hảo đa cộng tuyến), $\text{rank}(X) = p+1$, ma trận $X^TX$ là ma trận xác định dương (positive definite). Do đó, hàm RSS là hàm lồi chặt (strictly convex) và điểm dừng tìm được là điểm cực tiểu toàn cục duy nhất.
+Tính ma trận đạo hàm bậc 2 của $RSS(\beta)$:
+\[\nabla^2_{\beta}RSS = \frac{\partial}{\partial \beta}(2X^TX\beta - 2X^Ty) = 2X^TX\]
+Với giả thiết GM2 (Không hoàn hảo đa cộng tuyến), $\text{rank}(X) = p+1$, ma trận $X^TX$ là ma trận xác định dương. Do đó, hàm RSS là hàm lồi chặt và điểm dừng tìm được là điểm cực tiểu toàn cục duy nhất.
 
 \textbf{Bước 5: Nghiệm OLS.}
 Vì $X^TX$ xác định dương nên nó có khả năng nghịch đảo. Nhân cả hai vế của hệ phương trình chuẩn \eqref{eq:normal_equations} với $(X^TX)^{-1}$, ta thu được:
@@ -397,12 +393,12 @@ Vì phương sai của nhiễu $\sigma^2$ thường không được biết trư�
 
 \subsection{Ma trận Hat và tính chất}
 
-\textbf{Định nghĩa.} Ma trận chiếu (projection matrix), hay còn gọi là hat matrix, được ký hiệu là $H$, dùng để ánh xạ từ vector quan sát thực tế $y$ đến vector giá trị dự báo $\hat{y}$:
+\textbf{Định nghĩa.} Ma trận chiếu, hay còn gọi là hat matrix, được ký hiệu là $H$, dùng để ánh xạ từ vector quan sát thực tế $y$ đến vector giá trị dự báo $\hat{y}$:
 \begin{equation}
 H = X(X^TX)^{-1}X^T \in \mathbb{R}^{n \times n}
 \end{equation}
 Khi đó giá trị dự báo và phần dư được biểu diễn:
-$$\hat{y} = Hy, \qquad \hat{\epsilon} = y - \hat{y} = (I - H)y$$
+\[\hat{y} = Hy, \qquad \hat{\epsilon} = y - \hat{y} = (I - H)y\]
 
 Về mặt hình học, $\hat{y}$ là hình chiếu vuông góc của $y$ lên không gian cột $\text{Col}(X)$ của ma trận thiết kế $X$.
 
@@ -418,7 +414,7 @@ H^T &= \bigl(X(X^TX)^{-1}X^T\bigr)^T \\
      &= X \cdot (X^TX)^{-1} \cdot X^T = H
 \end{align*}
 
-\textbf{(ii) Tính lũy đẳng} (Idempotent): \textbf{$H^2 = H$}.
+\textbf{(ii) Tính lũy đẳng}: \textbf{$H^2 = H$}.
 
 \textit{Chứng minh.}
 \begin{align*}
@@ -432,27 +428,27 @@ H^2 &= H \cdot H \\
 \textbf{(iii) Giá trị riêng của $H$ chỉ là $0$ hoặc $1$.}
 
 \textit{Chứng minh.} Giả sử $\lambda$ là giá trị riêng của $H$ với vector riêng $v \neq 0$:
-$$Hv = \lambda v$$
+\[Hv = \lambda v\]
 Nhân cả hai vế với $H$ (bên trái):
-$$H^2 v = H(\lambda v) = \lambda Hv = \lambda^2 v$$
+\[H^2 v = H(\lambda v) = \lambda Hv = \lambda^2 v\]
 Mặt khác, do $H^2 = H$ (tính lũy đẳng):
-$$H^2 v = Hv = \lambda v$$
+\[H^2 v = Hv = \lambda v\]
 Suy ra $\lambda^2 v = \lambda v$, tức $(\lambda^2 - \lambda)v = 0$. Vì $v \neq 0$, ta được:
-$$\lambda^2 - \lambda = 0 \implies \lambda(\lambda - 1) = 0 \implies \lambda \in \{0, 1\}$$
+\[\lambda^2 - \lambda = 0 \implies \lambda \in \{0, 1\}\]
 
 \textbf{(iv) $\text{rank}(H) = p + 1$.}
 
 \textit{Chứng minh.} Do $\text{rank}(X) = p + 1$ (giả thiết GM2) và $(X^TX)^{-1}$ là ma trận khả nghịch kích thước $(p+1)\times(p+1)$, ta có:
-$$\text{rank}(H) = \text{rank}\bigl(X(X^TX)^{-1}X^T\bigr) = \text{rank}(X) = p + 1$$
+\[\text{rank}(H) = \text{rank}\bigl(X(X^TX)^{-1}X^T\bigr) = \text{rank}(X) = p + 1\]
 Ngoài ra, $\text{trace}(H) = \text{trace}\bigl(X(X^TX)^{-1}X^T\bigr) = \text{trace}\bigl((X^TX)^{-1}X^TX\bigr) = \text{trace}(I_{p+1}) = p + 1$. Vì giá trị riêng chỉ là $0$ hoặc $1$ và tổng giá trị riêng bằng $\text{trace}(H)$, nên có đúng $p+1$ giá trị riêng bằng $1$, phù hợp với $\text{rank}(H) = p+1$. 
 
 \subsection{Giả thiết Gauss--Markov và định lý BLUE}
 
 \textbf{Các giả thiết Gauss--Markov (GM1 -- GM5):}
 \begin{itemize}
-    \item \textbf{GM1. Tuyến tính} (Linear in parameters): $y = X\beta + \epsilon$. Mô hình thực tế phải tuyến tính đối với các tham số $\beta$, dù có thể phi tuyến đối với các biến độc lập.
+    \item \textbf{GM1. Tuyến tính}: $y = X\beta + \epsilon$. Mô hình thực tế phải tuyến tính đối với các tham số $\beta$, dù có thể phi tuyến đối với các biến độc lập.
     \item \textbf{GM2. Không hoàn hảo đa cộng tuyến:} $\text{rank}(X) = p + 1$. Các cột của $X$ phải độc lập tuyến tính, đảm bảo $X^TX$ khả nghịch.
-    \item \textbf{GM3. Ngoại sinh (Strict Exogeneity):} $\mathbb{E}[\epsilon \mid X] = \mathbf{0}$, tức sai số ngẫu nhiên có kỳ vọng bằng 0 có điều kiện trên $X$.
+    \item \textbf{GM3. Ngoại sinh:} $\mathbb{E}[\epsilon \mid X] = \mathbf{0}$, tức sai số ngẫu nhiên có kỳ vọng bằng 0 có điều kiện trên $X$.
     \item \textbf{GM4. Đồng phương sai và không tự tương quan:} $\text{Var}(\epsilon \mid X) = \sigma^2 I_n$. Phương sai phần dư là hằng số, và không có tương quan giữa phần dư của các quan sát khác nhau.
     \item \textbf{GM5. Phần dư chuẩn:} $\epsilon \mid X \sim \mathcal{N}(\mathbf{0}, \sigma^2 I_n)$. Giả thiết này không bắt buộc cho OLS nhưng cần thiết cho kiểm định thống kê (t-test, F-test).
 \end{itemize}
@@ -595,7 +591,7 @@ Biểu đồ Boxplot và phân phối cho thấy dữ liệu cảm biến chứa
     \caption{So sánh phân phối dữ liệu trước và sau khi áp dụng IQR Winsorization.}
 \end{figure}
 
-\textbf{Chiến lược xử lý:} Nhóm quyết định không xóa các điểm ngoại lai này (vì sẽ mâu thuẫn với nỗ lực điền khuyết bảo toàn dữ liệu ở trên), mà sử dụng phương pháp cắt ngọn (Winsorization). Ngoài ra, việc tồn tại nhiều outliers cũng là cơ sở để nhóm quyết định dùng trung vị thay vì trung bình trong quá trình điền khuyết các biến số thực, do trung vị mang tính bền vững (robust) hơn trước outlier.
+\textbf{Chiến lược xử lý:} Nhóm quyết định không xóa các điểm ngoại lai này (vì sẽ mâu thuẫn với nỗ lực điền khuyết bảo toàn dữ liệu ở trên), mà sử dụng phương pháp cắt ngọn (Winsorization). Ngoài ra, việc tồn tại nhiều outliers cũng là cơ sở để nhóm quyết định dùng trung vị thay vì trung bình trong quá trình điền khuyết các biến số thực, do trung vị mang tính bền vững hơn trước outlier.
 
 Công thức IQR capping:
 \begin{align*}
@@ -605,11 +601,11 @@ IQR &= Q_3 - Q_1 \\
 \end{align*}
 
 \subsubsection{Quy trình DataPipeline}
-Pipeline gồm 6 bước, thực hiện theo đúng thứ tự và chỉ \textbf{fit trên train}:
+Pipeline gồm 6 bước, thực hiện theo đúng thứ tự và chỉ fit trên train:
 \begin{enumerate}
     \item \textbf{Trích xuất đặc trưng (Feature engineering):} trích xuất \texttt{Month}, \texttt{DayOfWeek}, \texttt{Hour} từ \texttt{Date/Time}, sau đó loại bỏ cột gốc.
     \item \textbf{Loại cột thiếu quá nhiều:} các cột có tỉ lệ missing vượt ngưỡng 50\% được loại bỏ.
-    \item \textbf{Điền khuyết (Imputation):} biến số thực điền bằng median (robust với outliers), biến phân loại điền bằng mode. Với biến thời gian, dùng median để đảm bảo giá trị hợp lệ.
+    \item \textbf{Điền khuyết (Imputation):} biến số thực điền bằng median, biến phân loại điền bằng mode. Với biến thời gian, dùng median để đảm bảo giá trị hợp lệ.
     \item \textbf{Xử lý ngoại lai (Outlier handling):} áp dụng IQR capping cho các biến số (không áp dụng cho biến thời gian).
     \item \textbf{Mã hóa One-hot:} mã hóa các biến phân loại, đồng thời reindex để test có cùng cấu trúc cột như train.
     \item \textbf{Chuẩn hóa Z-score:} $x_{std} = (x-\mu)/\sigma$ để đưa các biến về cùng thang đo.
@@ -699,7 +695,7 @@ Lasso Regression được cài đặt bằng Coordinate Descent. Tương tự Ri
 \begin{equation}
 \hat{\beta}_{lasso} = \arg\min_{\beta}\left\{\lVert y - X\beta \rVert_2^2 + \lambda \lVert \beta \rVert_1\right\}
 \end{equation}
-Do chuẩn $L_1$ không có nghiệm đóng, thuật toán Coordinate Descent cập nhật từng hệ số bằng toán tử soft-threshold $S(z,\gamma)=\text{sign}(z)\cdot\max(|z|-\gamma,0)$. Lasso có xu hướng đưa các hệ số kém quan trọng về đúng 0, tạo ra mô hình thưa (sparse) -- khác với Ridge chỉ co nhỏ hệ số. Trên dữ liệu Air Quality, Lasso đạt kết quả tối ưu nhất trên tập test với MAE = 0.889858 và RMSE = 1.446016 do loại bỏ thành công các biến ít đóng góp.
+Do chuẩn $L_1$ không có nghiệm đóng, thuật toán Coordinate Descent cập nhật từng hệ số bằng toán tử soft-threshold $S(z,\gamma)=\text{sign}(z)\cdot\max(|z|-\gamma,0)$. Lasso có xu hướng đưa các hệ số kém quan trọng về đúng 0, tạo ra mô hình thưa -- khác với Ridge chỉ co nhỏ hệ số. Trên dữ liệu Air Quality, Lasso đạt kết quả tối ưu nhất trên tập test với MAE = 0.889858 và RMSE = 1.446016 do loại bỏ thành công các biến ít đóng góp.
 
 \subsubsection{Bayesian Linear Regression}
 Bayesian Linear Regression đạt MAE = 0.889976, RMSE = 1.446087 và $R^2 = 0.963608$. Kết quả gần OLS/Ridge vì prior tương đối yếu sau khi chuẩn hóa dữ liệu. Ưu điểm là mô hình cung cấp posterior covariance, giúp diễn giải độ bất định của hệ số.
@@ -720,7 +716,7 @@ OLS, Ridge, Lasso và Bayesian Linear Regression có hiệu suất gần như t�
 \end{figure}
 
 \subsection{Feature importance và residual plots}
-Hệ số hồi quy sau chuẩn hóa được dùng để biểu diễn độ quan trọng của đặc trưng. Các biến có |hệ số| lớn nhất là nhóm ảnh hưởng mạnh nhất tới \texttt{C6H6(GT)}; trong dữ liệu này, các cảm biến liên quan đến hydrocarbon như \texttt{PT08.S2(NMHC)} và \texttt{CO(GT)} thường có tác động mạnh, bên cạnh các biến điều kiện môi trường.
+Hệ số hồi quy sau chuẩn hóa được dùng để biểu diễn độ quan trọng của đặc trưng. Các biến có |hệ số| lớn nhất là nhóm ảnh hưởng mạnh nhất tới \texttt{C6H6(GT)}; trong dữ liệu này, các cảm biến liên quan đến hydrocarbon như \texttt{PT08.S2(NMHC)} và cảm biến CO như \texttt{PT08.S1(CO)} thường có tác động mạnh, bên cạnh các biến điều kiện môi trường.
 
 \begin{figure}[H]
     \centering
@@ -761,7 +757,7 @@ Mục này trình bày theo một khung thống nhất để người đọc d�
 
 \subsection{Nhóm hàm OLS và kiểm định thống kê}
 
-\subsubsection{\code{ols\_fit}}
+\subsubsection{\texorpdfstring{\code{ols\_fit}}{ols\_fit}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Hàm lõi cho toàn bộ phần OLS, được tái sử dụng trong kiểm định thống kê, VIF và các phần lựa chọn biến.
     \item Cơ sở lý thuyết: Nghiệm đóng của OLS và ước lượng phương sai nhiễu $\hat{\sigma}^2 = RSS/(n-p-1)$.
@@ -780,7 +776,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 \textit{[5] Đang tính giá trị VIF (vif)...}
 \end{mdframed}
 
-\subsubsection{\code{hat\_matrix}}
+\subsubsection{\texorpdfstring{\code{hat\_matrix}}{hat\_matrix}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Phục vụ phân tích phần dư, tính đòn bẩy và khoảng Cook.
     \item Cơ sở lý thuyết: Ma trận chiếu $H=X(X^T X)^{-1}X^T$ với tính chất đối xứng và lũy đẳng.
@@ -799,7 +795,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \caption{Bản đồ nhiệt ma trận Hat.}
 \end{figure}
 
-\subsubsection{\code{model\_metrics}}
+\subsubsection{\texorpdfstring{\code{model\_metrics}}{model\_metrics}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Tổng hợp các chỉ số đánh giá và kiểm định cho mô hình OLS.
     \item Cơ sở lý thuyết: $R^2$, $\overline{R}^2$ và kiểm định F dựa trên $RSS$ và $TSS$.
@@ -826,7 +822,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \caption{Các chỉ số đánh giá mô hình OLS.}
 \end{table}
 
-\subsubsection{\code{coef\_inference}}
+\subsubsection{\texorpdfstring{\code{coef\_inference}}{coef\_inference}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Suy luận thống kê cho từng hệ số để phục vụ chọn biến và diễn giải mô hình.
     \item Cơ sở lý thuyết: Ma trận hiệp phương sai của $\hat{\beta}$ và kiểm định t theo phân phối Student.
@@ -851,7 +847,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \caption{Bảng suy diễn hệ số hồi quy (*: có ý nghĩa thống kê ở mức 95\%).}
 \end{table}
 
-\subsubsection{\code{vif}}
+\subsubsection{\texorpdfstring{\code{vif}}{vif}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Đo đa cộng tuyến để hỗ trợ loại biến không ổn định.
     \item Cơ sở lý thuyết: $VIF_j=1/(1-R_j^2)$ với $R_j^2$ từ hồi quy biến $j$ theo các biến còn lại.
@@ -872,7 +868,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 
 \subsection{Nhóm hàm Ridge và k-fold CV}
 
-\subsubsection{\code{ridge\_fit}}
+\subsubsection{\texorpdfstring{\code{ridge\_fit}}{ridge\_fit}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Tính nghiệm Ridge để giảm phương sai khi các biến có tương quan cao.
     \item Cơ sở lý thuyết: $\hat{\beta}=(X^T X+\lambda I')^{-1}X^T y$, trong đó $I'$ bỏ phạt hệ số chặn.
@@ -899,7 +895,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \caption{So sánh hệ số hồi quy ($\lambda_{\text{ridge}}=1.0$, $\lambda_{\text{lasso}}=0.1$).}
 \end{table}
 
-\subsubsection{\code{plot\_ridge\_trace}}
+\subsubsection{\texorpdfstring{\code{plot\_ridge\_trace}}{plot\_ridge\_trace}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Minh họa sự co rút hệ số khi tăng $\lambda$ để chọn vùng ổn định.
     \item Đầu vào: $X$, $y$, danh sách $\lambda$; tùy chọn tên biến và số biến tối đa để hiển thị.
@@ -917,14 +913,14 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \caption{Biểu đồ đường vết hệ số Ridge (Ridge Trace).}
 \end{figure}
 
-\subsubsection{\code{lasso\_fit}}
+\subsubsection{\texorpdfstring{\code{lasso\_fit}}{lasso\_fit}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Tính nghiệm Lasso để tạo mô hình thưa khi các biến kém quan trọng cần bị loại hoàn toàn.
     \item Cơ sở lý thuyết: Tối thiểu hóa $\lVert y-X\beta \rVert^2 + \lambda\lVert\beta\rVert_1$ bằng Coordinate Descent với soft-threshold $S(z,\gamma)=\text{sign}(z)\cdot\max(|z|-\gamma,0)$. Intercept không bị regularize.
     \item Đầu vào: $X$, $y$, tham số phạt $\lambda \geq 0$, số vòng lặp tối đa và ngưỡng hội tụ.
     \item Đầu ra: $\hat{\beta}$ Lasso dạng $(p+1)\times1$.
     \item Quy trình xử lý: Khởi tạo $\beta=0$, tính trước tổng bình phương từng cột, lặp Coordinate Descent cập nhật từng $\beta_j$ bằng soft-threshold cho đến khi hội tụ.
-    \item Lưu ý: Khi $\lambda$ đủ lớn, nhiều hệ số feature bằng đúng 0 (sparsity); khi $\lambda \to 0$, kết quả tiệm cận OLS.
+    \item Lưu ý: Khi $\lambda$ đủ lớn, nhiều hệ số feature bằng đúng 0; khi $\lambda \to 0$, kết quả tiệm cận OLS.
     \item Kiểm thử thực tế:
     \item Thông số kiểm thử: Ma trận thiết kế $X$ kích thước $50 \times 6$, vector $y$ kích thước $50 \times 1$, lambda $\lambda = 0.1$, \texttt{max\_iter=1000}, \texttt{tol=1e-6}.
     \item Đầu ra kiểm thử thực tế: Vector hệ số Lasso $\hat{\beta}$ kích thước $6 \times 1$.
@@ -936,7 +932,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \caption{Biểu đồ đường vết hệ số Lasso (Lasso Path).}
 \end{figure}
 
-\subsubsection{\code{kfold\_cv}}
+\subsubsection{\texorpdfstring{\code{kfold\_cv}}{kfold\_cv}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Đánh giá độ ổn định của mô hình trên nhiều cách chia dữ liệu.
     \item Đầu vào: $X$, $y$, số $k$ và hàm huấn luyện tùy chọn trả về $\hat{\beta}$.
@@ -956,7 +952,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 
 \subsection{Nhóm hàm phân tích phần dư}
 
-\subsubsection{\code{residual\_plots}}
+\subsubsection{\texorpdfstring{\code{residual\_plots}}{residual\_plots}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Kiểm tra giả định tuyến tính, chuẩn và đồng phương sai cho mô hình.
     \item Cơ sở lý thuyết: Dựa trên phần dư chuẩn hóa, đòn bẩy từ ma trận chiếu và khoảng Cook.
@@ -977,7 +973,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 
 \subsection{Nhóm hàm tiền xử lý dữ liệu}
 
-\subsubsection{\code{DataPipeline.fit}}
+\subsubsection{\texorpdfstring{\code{DataPipeline.fit}}{DataPipeline.fit}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Học toàn bộ tham số tiền xử lý từ tập huấn luyện để tránh rò rỉ dữ liệu.
     \item Đầu vào: Bảng dữ liệu thô chưa tách target.
@@ -990,7 +986,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \item Ghi chú trực quan hóa: Hàm gốc chỉ tính toán. Trong kiểm thử, kết quả học được biểu diễn dưới dạng bảng tham số chẩn đoán in ra console để dễ đối chiếu.
 \end{itemize}
 
-\subsubsection{\code{DataPipeline.transform}}
+\subsubsection{\texorpdfstring{\code{DataPipeline.transform}}{DataPipeline.transform}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Áp dụng lại đúng các tham số đã học trên tập mới.
     \item Đầu vào: Bảng dữ liệu cần xử lý.
@@ -1023,7 +1019,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 
 \subsection{Nhóm hàm Bayesian Linear Regression}
 
-\subsubsection{\code{bayesian\_linear\_fit}}
+\subsubsection{\texorpdfstring{\code{bayesian\_linear\_fit}}{bayesian\_linear\_fit}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Bổ sung mô hình Bayes với prior Gaussian, vẫn giữ cấu trúc tuyến tính.
     \item Cơ sở lý thuyết: Hậu nghiệm Gaussian với $S_n=(S_0^{-1}+X^T X/\sigma^2)^{-1}$ và $m_n=S_n(S_0^{-1}m_0+X^T y/\sigma^2)$.
@@ -1037,7 +1033,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \item Ghi chú trực quan hóa: Hàm gốc trả về phân phối hậu nghiệm số học. Trong kiểm thử, ma trận hiệp phương sai hậu nghiệm $S_n$ được trực quan hóa thành bản đồ nhiệt (xem Hình bên dưới) để chẩn đoán độ biến động của các tham số.
 \end{itemize}
 
-\subsubsection{\code{bayesian\_predict}}
+\subsubsection{\texorpdfstring{\code{bayesian\_predict}}{bayesian\_predict}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Dự đoán theo kỳ vọng hậu nghiệm.
     \item Đầu vào: $X$ và từ điển posterior từ \texttt{bayesian\_linear\_fit}.
@@ -1045,7 +1041,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     \item Quy trình xử lý: Nhân ma trận $X$ với $\mathbb{E}[\beta|X,y]$.
 \end{itemize}
 
-\subsubsection{\code{credible\_intervals}}
+\subsubsection{\texorpdfstring{\code{credible\_intervals}}{credible\_intervals}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Ước lượng khoảng tin cậy của hệ số theo hậu nghiệm.
     \item Đầu vào: Posterior và mức tin cậy $\alpha$.
@@ -1061,6 +1057,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 \begin{table}[H]
     \centering
     \small
+    \resizebox{\textwidth}{!}{%
     \begin{tabular}{lrrrrr}
     \toprule
     \textbf{Biến độc lập} & \textbf{Gốc} & \textbf{Hệ số OLS} & \textbf{Bayes} (Prior yếu) & \textbf{Bayes} (Prior chuẩn) & \textbf{Bayes} (Prior mạnh) \\
@@ -1069,7 +1066,8 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
     Biến x1 ($b_1$) & 2.000 & 1.897 & 1.897247 & 1.838171 & 0.465670 \\
     Biến x2 ($b_2$) & -1.500 & -1.120 & -1.120425 & -1.074257 & -0.190493 \\
     \bottomrule
-    \end{tabular}
+    \end{tabular}%
+    }
     \caption{So sánh sự co rút hệ số hồi quy dưới các phương sai prior khác nhau.}
 \end{table}
 
@@ -1106,7 +1104,7 @@ Tổng quan dữ liệu: $n = 15$ mẫu quan sát, $p = 3$ biến số thực ng
 
 \subsection{Nhóm hàm so sánh mô hình}
 
-\subsubsection{\code{train\_and\_compare}}
+\subsubsection{\texorpdfstring{\code{train\_and\_compare}}{train\_and\_compare}}
 \begin{itemize}[leftmargin=*]
     \item Bối cảnh sử dụng: Quy trình tổng hợp từ tiền xử lý đến huấn luyện và so sánh 5 mô hình.
     \item Đầu vào: Đường dẫn dữ liệu, số k cho chia k phần, danh sách $\lambda$ tùy chọn và cờ vẽ đồ thị.
@@ -1173,6 +1171,7 @@ Hạn chế và hướng mở rộng:
 \begin{table}[H]
     \centering
     \scriptsize
+    \resizebox{\textwidth}{!}{%
     \begin{tabular}{lrrrrrrrr}
     \toprule
      & count & mean & std & min & 25\% & 50\% & 75\% & max \\
@@ -1191,7 +1190,8 @@ Hạn chế và hướng mở rộng:
     AH & 8991.000000 & 1.025500 & 0.403800 & 0.184700 & 0.736800 & 0.995400 & 1.313700 & 2.231000 \\
     C6H6(GT) & 8991.000000 & 10.083100 & 7.449800 & 0.100000 & 4.400000 & 8.200000 & 14.000000 & 63.700000 \\
     \bottomrule
-    \end{tabular}
+    \end{tabular}%
+    }
     \caption{Thống kê mô tả các biến số trong Air Quality (sau khi loại dòng thiếu target).}
 \end{table}
 
