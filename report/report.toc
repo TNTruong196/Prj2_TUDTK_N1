@@ -1,0 +1,61 @@
+\contentsline {section}{Lời nói đầu}{1}{section*.3}%
+\contentsline {section}{Lời cam đoan}{1}{section*.4}%
+\contentsline {section}{\numberline {1}Bảng phân công công việc}{1}{section.1}%
+\contentsline {section}{\numberline {2}Giới thiệu}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Mục tiêu của báo cáo}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Phạm vi trình bày}{3}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Phần 1: Lý thuyết Data Fitting và minh họa}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Bài toán Data Fitting và mô hình hồi quy tuyến tính}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Nghiệm OLS và ước lượng phương sai}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Ma trận Hat và tính chất}{5}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Giả thiết Gauss--Markov và định lý BLUE}{7}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Kiểm định thống kê và các chỉ số đánh giá}{10}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Minh họa định lý Gauss--Markov bằng Monte Carlo}{10}{subsection.3.6}%
+\contentsline {subsection}{\numberline {3.7}Phân tích phần dư cho dữ liệu giả lập}{11}{subsection.3.7}%
+\contentsline {section}{\numberline {4}Phần 2: Ứng dụng dữ liệu thực}{12}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Nguồn dữ liệu và điều kiện đề bài}{12}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Tiền xử lý dữ liệu và DataPipeline}{12}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Phân tích missing values và outliers}{12}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Phân tích cơ chế giá trị khuyết thiếu (Missing Values)}{12}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Phân tích giá trị ngoại lai (Outliers)}{13}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}Quy trình DataPipeline}{14}{subsubsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.3}So sánh mô hình và đánh giá}{15}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Ridge Regression và Ridge Trace}{15}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}k-fold Cross-Validation}{16}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Nhận xét}{16}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}OLS cơ bản}{16}{subsubsection.4.6.1}%
+\contentsline {subsubsection}{\numberline {4.6.2}OLS chọn biến}{17}{subsubsection.4.6.2}%
+\contentsline {subsubsection}{\numberline {4.6.3}Ridge Regression}{17}{subsubsection.4.6.3}%
+\contentsline {subsubsection}{\numberline {4.6.4}Lasso Regression}{17}{subsubsection.4.6.4}%
+\contentsline {subsubsection}{\numberline {4.6.5}Bayesian Linear Regression}{17}{subsubsection.4.6.5}%
+\contentsline {subsubsection}{\numberline {4.6.6}Tổng hợp}{18}{subsubsection.4.6.6}%
+\contentsline {subsection}{\numberline {4.7}Feature importance và residual plots}{19}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Kỹ thuật nâng cao: Bayesian Linear Regression}{20}{subsection.4.8}%
+\contentsline {subsection}{\numberline {4.9}Lý do chọn Bayesian Linear Regression thay vì Kernel Regression}{21}{subsection.4.9}%
+\contentsline {section}{\numberline {5}Phân tích các hàm chính}{21}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Nhóm hàm OLS và kiểm định thống kê}{21}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}\colorbox {light-gray}{\texttt {ols\_fit}}}{21}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}\colorbox {light-gray}{\texttt {hat\_matrix}}}{22}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}\colorbox {light-gray}{\texttt {model\_metrics}}}{23}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.4}\colorbox {light-gray}{\texttt {coef\_inference}}}{24}{subsubsection.5.1.4}%
+\contentsline {subsubsection}{\numberline {5.1.5}\colorbox {light-gray}{\texttt {vif}}}{24}{subsubsection.5.1.5}%
+\contentsline {subsection}{\numberline {5.2}Nhóm hàm Ridge và k-fold CV}{25}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}\colorbox {light-gray}{\texttt {ridge\_fit}}}{25}{subsubsection.5.2.1}%
+\contentsline {subsubsection}{\numberline {5.2.2}\colorbox {light-gray}{\texttt {plot\_ridge\_trace}}}{26}{subsubsection.5.2.2}%
+\contentsline {subsubsection}{\numberline {5.2.3}\colorbox {light-gray}{\texttt {lasso\_fit}}}{27}{subsubsection.5.2.3}%
+\contentsline {subsubsection}{\numberline {5.2.4}\colorbox {light-gray}{\texttt {kfold\_cv}}}{28}{subsubsection.5.2.4}%
+\contentsline {subsection}{\numberline {5.3}Nhóm hàm phân tích phần dư}{29}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}\colorbox {light-gray}{\texttt {residual\_plots}}}{29}{subsubsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.4}Nhóm hàm tiền xử lý dữ liệu}{30}{subsection.5.4}%
+\contentsline {subsubsection}{\numberline {5.4.1}\colorbox {light-gray}{\texttt {DataPipeline.fit}}}{30}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.2}\colorbox {light-gray}{\texttt {DataPipeline.transform}}}{31}{subsubsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.5}Nhóm hàm Bayesian Linear Regression}{32}{subsection.5.5}%
+\contentsline {subsubsection}{\numberline {5.5.1}\colorbox {light-gray}{\texttt {bayesian\_linear\_fit}}}{32}{subsubsection.5.5.1}%
+\contentsline {subsubsection}{\numberline {5.5.2}\colorbox {light-gray}{\texttt {bayesian\_predict}}}{33}{subsubsection.5.5.2}%
+\contentsline {subsubsection}{\numberline {5.5.3}\colorbox {light-gray}{\texttt {credible\_intervals}}}{33}{subsubsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.6}Nhóm hàm so sánh mô hình}{34}{subsection.5.6}%
+\contentsline {subsubsection}{\numberline {5.6.1}\colorbox {light-gray}{\texttt {train\_and\_compare}}}{34}{subsubsection.5.6.1}%
+\contentsline {section}{\numberline {6}Kết luận}{35}{section.6}%
+\contentsline {section}{Tài liệu tham khảo}{36}{section*.28}%
+\contentsline {subsection}{Phụ lục A: Bảng số liệu và kết quả bổ sung}{37}{section*.29}%
+\contentsline {subsection}{Phụ lục B: GitHub Repository}{38}{section*.38}%
